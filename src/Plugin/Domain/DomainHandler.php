@@ -10,7 +10,6 @@ class DomainHandler extends BaseHandler
 {
     public function handleList(Args $args, IO $io)
     {
-
     }
 
     public function handleAdd(Args $args, IO $io)

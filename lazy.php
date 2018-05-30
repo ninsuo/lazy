@@ -28,6 +28,14 @@ foreach (rglob('src/*ServiceProvider.php') as $command) {
     $container->register(new $class());
 }
 
+// --- Preparing configuration
+
+$config = __DIR__.'/config.yml';
+if (!is_readable($config)) {
+    die('Please copy config.yml.dist to config.yml'.PHP_EOL);
+}
+$container['config'] = Symfony\Component\Yaml\Yaml::parse(file_get_contents($config));
+
 // --- Loading all command configurations and launching the console
 
 $configuration = new \Lazy\Core\Configuration();
