@@ -11,7 +11,7 @@ trait LoggerTrait
      */
     public function raw(IO $io, $message)
     {
-        $io->writeLine(
+        $io->write(
             call_user_func_array('sprintf', array_slice(func_get_args(), 1))
         );
     }
