@@ -10,7 +10,6 @@ class DomainHandler extends BaseHandler
 {
     public function handleList(Args $args, IO $io)
     {
-        $this->raw($io, $this->exec("emacs -nw test.txt", [], true));
 
     }
 
