@@ -27,16 +27,15 @@ class WebsiteHandler extends BaseHandler
 
     public function handleAdd(Args $args, IO $io)
     {
-        $domain = $this->sanitizeDomain($args->getArgument('domain'));
+        $fqdn = $this->sanitizeWebsite($args->getArgument('fqdn'));
 
-        $domains = $this->getRepository()->getDomains();
-        if (in_array($domain, $domains->domains)) {
-            throw new StopExecutionException('Domain %s already exists!', $domain);
+        if (in_array($fqdn, $this->getRepository()->getWebsites())) {
+            throw new StopExecutionException('Website %s already exists!', $fqdn);
         }
 
         $email = $this->sanitizeEmail();
 
-        $this->getRepository()->create($domain, $email);
+        $this->getRepository()->create($fqdn, $email);
     }
 
     public function handleEdit(Args $args, IO $io)
@@ -130,11 +129,11 @@ class WebsiteHandler extends BaseHandler
         $this->getRepository()->restoreBackup($id);
     }
 
-    public function sanitizeDomain($domain)
+    public function sanitizeWebsite($fqdn)
     {
-        $this->validate('domain', $domain, new Regex('!^[a-zA-Z0-9\.\-]+$!'));
+        $this->validate('fqdn', $fqdn, new Regex('!^[a-zA-Z0-9\.\-]+$!'));
 
-        return trim(mb_strtolower($domain), '.');
+        return mb_strtolower($fqdn);
     }
 
     public function sanitizeEmail()
@@ -143,7 +142,7 @@ class WebsiteHandler extends BaseHandler
 
         $this->validate('email', $email, new Email());
 
-        return trim(preg_replace("/[^a-z0-9]/", '.', $email), '.');
+        return $email;
     }
 
     /**
