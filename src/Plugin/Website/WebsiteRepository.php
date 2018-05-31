@@ -14,7 +14,7 @@ class WebsiteRepository extends BaseService
     public function getWebsites()
     {
         $websites = [];
-        $output = $this->exec("grep -Ri 'ServerName' /etc/apache2/sites-available");
+        $output = $this->exec("grep -Ri 'ServerName' /etc/apache2/sites-available")->stdout;
         foreach (array_filter(explode("\n", $output)) as $line) {
             $tokens = array_values(array_filter(explode(' ', str_replace("\t", ' ', $line))));
             if (count($tokens) == 3) {
