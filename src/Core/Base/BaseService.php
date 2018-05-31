@@ -41,7 +41,7 @@ abstract class BaseService
         $executed = new Execution($query, $process->getOutput(), $process->getErrorOutput(), $process->getExitCode());
 
         if (isset($this->container['io'])) {
-            $this->container['io']->write($executed);
+            $this->container['io']->writeLine($executed);
         }
 
         return $executed;
