@@ -3,6 +3,7 @@
 namespace Lazy\Core\Base;
 
 use Lazy\Core\Exception\StopExecutionException;
+use Symfony\Component\Validator\Validation;
 
 abstract class BaseHandler extends BaseService
 {
