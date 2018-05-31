@@ -49,8 +49,7 @@ class DomainRepository extends BaseService
         $domains = $this->getDomains();
 
         if (in_array($name, $domains->domains)) {
-            $this->error('Domain %s already exists!', $name);
-            throw new StopExecutionException();
+            throw new StopExecutionException('Domain %s already exists!', $name);
         }
 
         $backupId = $this->createBackup(sprintf('Creating domain %s', $email));
