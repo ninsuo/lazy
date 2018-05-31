@@ -19,11 +19,6 @@ abstract class BaseService
      */
     protected $container;
 
-    /**
-     * @var IO
-     */
-    protected $io;
-
     public function __construct(Container $container)
     {
         $this->container = $container;
@@ -45,8 +40,8 @@ abstract class BaseService
 
         $executed = new Execution($query, $process->getOutput(), $process->getErrorOutput(), $process->getExitCode());
 
-        if (isset($this->io)) {
-            $this->io->write($executed);
+        if (isset($this->container['io'])) {
+            $this->container['io']->write($executed);
         }
 
         return $executed;

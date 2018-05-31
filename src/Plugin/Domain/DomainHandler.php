@@ -11,7 +11,7 @@ class DomainHandler extends BaseHandler
 {
     public function handleList(Args $args, IO $io)
     {
-        $this->io = $io;
+        $this->container['io'] = $io;
 
         $domains = $this->getRepository()->getDoamins();
 
@@ -20,7 +20,7 @@ class DomainHandler extends BaseHandler
         foreach ($domains->domains as $domain) {
             $table->addRow([
                 $domain,
-                $domain === $domains->primary ? '✅' : '❌',
+                $domain === $domains->primary ? '<green>y</green>' : '<red>no</red>',
             ]);
         }
 
