@@ -30,7 +30,7 @@ class DomainHandler extends BaseHandler
 
     public function handleCreate(Args $args, IO $io)
     {
-        $domain = $this->sanitizeDomain($args->getArgument('name'));
+        $domain = $this->sanitizeDomain($args->getArgument('domain'));
 
         $domains = $this->getRepository()->getDomains();
         if (in_array($domain, $domains->domains)) {
@@ -44,7 +44,7 @@ class DomainHandler extends BaseHandler
 
     public function handleEdit(Args $args, IO $io)
     {
-        $domain = $this->sanitizeDomain($args->getArgument('name'));
+        $domain = $this->sanitizeDomain($args->getArgument('domain'));
 
         $domains = $this->getRepository()->getDomains();
         if (!in_array($domain, $domains->domains)) {
@@ -56,7 +56,7 @@ class DomainHandler extends BaseHandler
 
     public function handleRemove(Args $args, IO $io)
     {
-        $domain = $this->sanitizeDomain($args->getArgument('name'));
+        $domain = $this->sanitizeDomain($args->getArgument('domain'));
 
         $domains = $this->getRepository()->getDomains();
         if (!in_array($domain, $domains->domains)) {
@@ -70,7 +70,7 @@ class DomainHandler extends BaseHandler
 
     public function handlePrimary(Args $args, IO $io)
     {
-        if (is_null($args->getArgument('name'))) {
+        if (is_null($args->getArgument('domain'))) {
             $domains = $this->getRepository()->getDomains();
             if ($domains->primary) {
                 $this->info('Primary domain name is: <b>%s</b>', $domains->primary);
@@ -81,7 +81,7 @@ class DomainHandler extends BaseHandler
             return;
         }
 
-        $domain = $this->sanitizeDomain($args->getArgument('name'));
+        $domain = $this->sanitizeDomain($args->getArgument('domain'));
 
         $domains = $this->getRepository()->getDomains();
         if (!in_array($domain, $domains->domains)) {
@@ -94,6 +94,43 @@ class DomainHandler extends BaseHandler
         $email = $this->sanitizeEmail();
 
         $this->getRepository()->setPrimary($domain, $email);
+    }
+
+    public function handleListBackups(Args $args, IO $io)
+    {
+        $backups = $this->getRepository()->listBackups();
+
+        $table = new Table();
+        $table->setHeaderRow(['ID', 'Date', 'Notes']);
+        foreach ($backups as $backup) {
+            $table->addRow($backup['id'], $backup['date'], $backup['notes']);
+        }
+
+        $table->render($io);
+    }
+
+    public function handleBackupNow(Args $args, IO $io)
+    {
+        $this->getRepository()->createBackup(
+            $args->getArgument('notes')
+        );
+    }
+
+    public function handleRestoreBackup(Args $args, IO $io)
+    {
+        $id = $args->getArgument('id');
+
+        $config = sprintf(
+            '%s/%s.txt',
+            $this->getRepository()->getBackupDirectory(),
+            str_replace('/', '', $id)
+        );
+
+        if (!is_file($config)) {
+            $this->error('Domains backup ID #%s does not exist.', $id);
+        }
+
+        $this->getRepository()->restoreBackup($id);
     }
 
     public function sanitizeDomain($domain)

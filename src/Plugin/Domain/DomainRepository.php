@@ -3,6 +3,8 @@
 namespace Lazy\Plugin\Domain;
 
 use Lazy\Core\Base\BaseService;
+use Ramsey\Uuid\Uuid;
+use Webmozart\Console\UI\Component\Table;
 
 class DomainRepository extends BaseService
 {
@@ -160,24 +162,101 @@ class DomainRepository extends BaseService
         $this->success('Successfully removed the reverse dns data file.');
     }
 
-    public function listBackups($title)
+    public function listBackups()
     {
+        $backups = array_map(function($v) {
+            $json = json_decode(file_get_contents($v), true);
+            $json['id'] = substr($v, 0, -4);
+            return $json;
+        }, glob(sprintf('%s/*.txt', $this->getBackupDirectory())));
 
+        usort($backups, function($a, $b) {
+            return strtotime($a['date']) < strtotime($b['date']);
+        });
+
+        return $backups;
     }
+
+    protected function cleanBackups()
+    {
+        $backups = $this->exec('ls -t :dir | grep -v \.txt', [
+            'dir' => $this->getBackupDirectory(),
+        ]);
+
+        if ($count = count($backups) > 3) {
+            for ($i = 3; $i < $count; $i++) {
+                $this->removeBackup($backups[$i]);
+            }
+        }
+   }
 
     public function createBackup($title)
     {
+        $this->cleanBackups();
 
+        $id = Uuid::uuid4();
+        $backupDir = sprintf('%s/%s', $this->getBackupDirectory(), $id);
+
+        $this->exec('cp -r /etc/bind :dir', [
+            'dir' => $backupDir,
+        ]);
+
+        $backupTrace = sprintf('%s/%s.json', $this->getBackupDirectory(), $id);
+
+        file_put_contents($backupTrace, json_encode([
+            'date' => date('d/m/Y H:i:s'),
+            'notes' => $title,
+        ]));
+
+        $this->success('Successfully backed up domains in %s', $id);
     }
 
     public function restoreBackup($id)
     {
+        $this->createBackup('Restoring backup #%s', $id);
 
+        $sourceDir = sprintf('%s/%s', $this->getBackupDirectory(), $id);
+        $targetDir = '/etc/bind';
+
+        $this->exec('rm -rf :target', [
+            'target' => $targetDir,
+        ]);
+
+        $this->exec('cp -r :source :target', [
+            'source' => $sourceDir,
+            'target' => $targetDir,
+        ]);
+
+        $this->exec('service bind9 restart');
+
+        $this->success('Successfully restored backup #%s', $id);
     }
 
-    public function removeBackup($id)
+    protected function removeBackup($id)
     {
+        $backupDir = sprintf('%s/%s', $this->getBackupDirectory(), $id);
+        $backupFile = sprintf('%s.txt', $backupDir);
 
+        $this->exec('rm -rf :dir :file', [
+            'dir' => $backupDir,
+            'file' => $backupFile,
+        ]);
+    }
+
+    /**
+     * @return string
+     */
+    public function getBackupDirectory()
+    {
+        $dir = $this->getParameter('backup_dir') . '/domain';
+
+        if (!is_dir($dir)) {
+            $this->exec('mkdir :dir', [
+                'dir' => $dir,
+            ]);
+        }
+
+        return $dir;
     }
 
     /**
