@@ -181,9 +181,11 @@ class DomainRepository extends BaseService
 
     protected function cleanBackups()
     {
-        $backups = $this->exec('ls -t :dir | grep -v \.json', [
+        $exec = $this->exec('ls -t :dir | grep -v json', [
             'dir' => $this->getBackupDirectory(),
         ]);
+
+        $backups = explode("\n", $exec->stdout);
 
         if ($count = count($backups) > 3) {
             for ($i = 3; $i < $count; $i++) {
