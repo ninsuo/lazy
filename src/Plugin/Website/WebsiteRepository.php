@@ -57,7 +57,7 @@ class WebsiteRepository extends BaseService
 
         $this->exec('service apache2 restart');
 
-        // Create SSL certificate
+        // Create SSL certificate and clear up temp configuration
 
         if (!is_file(sprintf('/etc/letsencrypt/renewal/%s.conf', $fqdn))) {
             $this->exec('certbot --non-interactive --agree-tos --email :email --installer apache --webroot --webroot-path=:webroot --domains :fqdn', [
@@ -66,6 +66,11 @@ class WebsiteRepository extends BaseService
                 'fqdn' => $fqdn,
             ]);
         }
+
+        $this->exec('rm :available :enabled', [
+            'available' => $available,
+            'enabled' => $enabled,
+        ]);
 
         // Standard (http:80) configuration
 
@@ -78,7 +83,6 @@ class WebsiteRepository extends BaseService
         $available = sprintf('/etc/apache2/sites-available/000-%s.conf', $fqdn);
         $enabled = sprintf('/etc/apache2/sites-enabled/000-%s.conf', $fqdn);
         file_put_contents($available, $content);
-        $this->exec(sprintf('%s %s', $this->getParameter('editor'), $available), [], true);
         $this->exec('ln -sf :available :enabled', [
             'available' => $available,
             'enabled' => $enabled,
@@ -95,7 +99,6 @@ class WebsiteRepository extends BaseService
         $available = sprintf('/etc/apache2/sites-available/000-%s-ssl.conf', $fqdn);
         $enabled = sprintf('/etc/apache2/sites-enabled/000-%s-ssl.conf', $fqdn);
         file_put_contents($available, $content);
-        $this->exec(sprintf('%s %s', $this->getParameter('editor'), $available), [], true);
         $this->exec('ln -sf :available :enabled', [
             'available' => $available,
             'enabled' => $enabled,
