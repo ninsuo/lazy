@@ -63,6 +63,9 @@ class Execution
             $execution .= '</red>';
         }
 
+        $execution .= str_repeat('-', 80);
+        $execution .= PHP_EOL;
+
         return $execution;
     }
 }
