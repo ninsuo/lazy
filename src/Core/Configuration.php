@@ -12,7 +12,8 @@ class Configuration extends DefaultApplicationConfig
         parent::configure();
 
         $this
-            ->setName('🍔 lazy 🍔')
+            ->setName('lazy')
+            ->setDisplayName('🍔 lazy 🍔')
             ->setVersion('0.0.1');
 
         // Configure color tags (to use <red>bob</red> for example)
