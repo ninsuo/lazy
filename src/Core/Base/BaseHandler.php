@@ -17,6 +17,9 @@ abstract class BaseHandler extends BaseService
         $violations = 0;
         $errors = $validator->validate($value, $constraints);
         foreach ($errors as $error) {
+
+            echo "there are errors\n";
+
             $violations++;
             $this->error('Error validating value <red>%s</red> for %s: %s', $value, $name, $error->getMessage());
         }
