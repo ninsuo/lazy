@@ -27,7 +27,7 @@ class DomainRepository extends BaseService
         $file = '/etc/bind/db.' . $this->getArpa();
 
         if (is_file($file)) {
-            $primary = $this->exec("cat :file | grep IN | grep SOA | cut -d $'\t' -f 4 | cut -d ' ' -f 1", [
+            $primary = $this->exec("cat :file | grep IN | grep SOA | cut -d '\t' -f 4 | cut -d ' ' -f 1", [
                 'file' => $file,
             ]);
 

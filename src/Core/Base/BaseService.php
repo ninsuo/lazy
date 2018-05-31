@@ -7,13 +7,22 @@ use Lazy\Core\Traits\ConfigTrait;
 use Lazy\Core\Traits\LoggerTrait;
 use Pimple\Container;
 use Symfony\Component\Process\Process;
+use Webmozart\Console\Api\IO\IO;
 
 abstract class BaseService
 {
     use ConfigTrait;
     use LoggerTrait;
 
+    /**
+     * @var Container
+     */
     protected $container;
+
+    /**
+     * @var IO
+     */
+    protected $io;
 
     public function __construct(Container $container)
     {
@@ -34,12 +43,12 @@ abstract class BaseService
         $process->setTty($tty);
         $process->run();
 
-        $exec = new Execution($query, $process->getOutput(), $process->getErrorOutput(), $process->getExitCode());
+        $executed = new Execution($query, $process->getOutput(), $process->getErrorOutput(), $process->getExitCode());
 
-        echo $exec;
+        if (isset($this->io)) {
+            $this->io->write($executed);
+        }
 
-        return $exec;
+        return $executed;
     }
-
-
 }

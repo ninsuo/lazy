@@ -11,6 +11,8 @@ class DomainHandler extends BaseHandler
 {
     public function handleList(Args $args, IO $io)
     {
+        $this->io = $io;
+
         $domains = $this->getRepository()->getDoamins();
 
         $table = new Table();
