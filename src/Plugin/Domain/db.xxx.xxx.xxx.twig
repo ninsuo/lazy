@@ -1,0 +1,18 @@
+{% autoescape false %}
+;
+; BIND reverse data file for {{ arpa }}.XXX interface
+;
+$TTL	86400
+@	IN	SOA	{{ primary.name }}. {{ email }}. (
+			{{ timestamp }}	; Serial
+			 10800		; Refresh
+			  3600		; Retry
+			604800		; Expire
+			 10800 )	; Negative Cache TTL
+;
+@	IN	NS	{{ primary.name }}.
+{% for domain in domains %}
+60	IN	PTR	{{ domain.name }}.
+{% endfor %}
+
+{% endautoescape %}

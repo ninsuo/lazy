@@ -9,6 +9,12 @@ if (file_exists($autoload = __DIR__.'/../../../autoload.php')) {
 
 date_default_timezone_set('UTC');
 
+// --- This command is made for roots
+
+if (exec('whoami') !== 'root') {
+    die('This command should be run as root.'.PHP_EOL);
+}
+
 // --- Preparing service container
 
 $container = new \Pimple\Container();
@@ -37,7 +43,7 @@ if (!is_file($config) || !is_readable($config)) {
 
 $container['config'] = Symfony\Component\Yaml\Yaml::parse(file_get_contents($config));
 if (!is_array($container['config'])) {
-    die('Parsed configuration should be an array of key / value pairs.');
+    die('Parsed configuration should be an array of key / value pairs.'.PHP_EOL);
 }
 
 // --- Loading all command configurations and launching the console
@@ -50,6 +56,16 @@ foreach ($container->keys() as $key) {
     }
 }
 
+$configuration->addEventListener(\Webmozart\Console\Api\Event\ConsoleEvents::PRE_HANDLE,
+    function (\Webmozart\Console\Api\Event\PreHandleEvent $e) use ($container) {
+        $container['io'] = $e->getIO();
+});
+
 $console = new \Webmozart\Console\ConsoleApplication($configuration);
-$console->run();
+
+try {
+    $console->run();
+} catch (\Lazy\Core\Exception\StopExecutionException $e) {
+    return 1;
+}
 

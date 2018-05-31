@@ -2,25 +2,26 @@
 
 namespace Lazy\Core\Base;
 
-use Webmozart\Console\Api\Args\Args;
-use Webmozart\Console\Api\IO\IO;
+use Lazy\Core\Exception\StopExecutionException;
 
 abstract class BaseHandler extends BaseService
 {
-    public function validate(Args $args, IO $io, array $constraints)
+    public function validate($name, $value, $constraints)
     {
+        if (!is_array($constraints)) {
+            $constraints = [$constraints];
+        }
+
         $validator  = Validation::createValidator();
         $violations = 0;
-        foreach ($constraints as $argument => $constraints) {
-            $data   = $args->getArgument($argument);
-            $errors = $validator->validate($data, $constraints);
-            foreach ($errors as $error) {
-                $violations++;
-                $this->error($io, 'Error validating <red>%s</red>: %s', $argument, $error->getMessage());
-            }
+        $errors = $validator->validate($value, $constraints);
+        foreach ($errors as $error) {
+            $violations++;
+            $this->error('Error validating value <red>%s</red> for %s: %s', $value, $name, $error->getMessage());
         }
+
         if ($violations) {
-            return 1;
+            throw new StopExecutionException();
         }
     }
 }

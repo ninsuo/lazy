@@ -7,7 +7,6 @@ use Lazy\Core\Traits\ConfigTrait;
 use Lazy\Core\Traits\LoggerTrait;
 use Pimple\Container;
 use Symfony\Component\Process\Process;
-use Webmozart\Console\Api\IO\IO;
 
 abstract class BaseService
 {
@@ -40,10 +39,17 @@ abstract class BaseService
 
         $executed = new Execution($query, $process->getOutput(), $process->getErrorOutput(), $process->getExitCode());
 
-        if (isset($this->container['io'])) {
-            $this->container['io']->writeLine($executed);
-        }
+        $this->container['io']->writeLine($executed);
 
         return $executed;
+    }
+
+    public function render($template, array $parameters = [])
+    {
+        $twig = new \Twig_Environment(
+            new \Twig_Loader_Filesystem(dirname($template))
+        );
+
+        return $twig->render(basename($template), $parameters);
     }
 }

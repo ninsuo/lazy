@@ -5,6 +5,7 @@ namespace Lazy\Plugin\Domain;
 use Lazy\Core\Base\BaseConfiguration;
 use Lazy\Core\Configuration;
 use Webmozart\Console\Api\Args\Format\Argument;
+use Webmozart\Console\Api\Args\Format\Option;
 
 class DomainConfiguration extends BaseConfiguration
 {
@@ -23,6 +24,7 @@ class DomainConfiguration extends BaseConfiguration
                     ->setHandlerMethod('handleEnroll')
                     ->setDescription('Enroll a new domain name')
                     ->addArgument('name', Argument::REQUIRED, 'The domain name to create')
+                    ->addOption('email', null, Option::STRING, 'A valid email address')
                 ->end()
                 ->beginSubCommand('edit')
                     ->setHandlerMethod('handleEdit')

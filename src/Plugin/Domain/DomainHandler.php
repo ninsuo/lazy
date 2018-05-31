@@ -3,6 +3,8 @@
 namespace Lazy\Plugin\Domain;
 
 use Lazy\Core\Base\BaseHandler;
+use Lazy\Core\Exception\StopExecutionException;
+use Symfony\Component\Validator\Constraints\Email;
 use Webmozart\Console\Api\Args\Args;
 use Webmozart\Console\Api\IO\IO;
 use Webmozart\Console\UI\Component\Table;
@@ -11,9 +13,7 @@ class DomainHandler extends BaseHandler
 {
     public function handleList(Args $args, IO $io)
     {
-        $this->container['io'] = $io;
-
-        $domains = $this->getRepository()->getDoamins();
+        $domains = $this->getRepository()->getDomains();
 
         $table = new Table();
         $table->setHeaderRow(['Domain Name', 'Primary']);
@@ -27,33 +27,17 @@ class DomainHandler extends BaseHandler
         $table->render($io);
     }
 
-    public function handleAdd(Args $args, IO $io)
+    public function handleEnroll(Args $args, IO $io)
     {
+        $domain = $args->getArgument('name');
 
-    }
+        $email = $args->getArgument('email');
+        if (is_null($email)) {
+            $email = sprintf('admin@%s', $domain);
+        }
 
-    public function handleRemove(Args $args, IO $io)
-    {
+        $this->validate($email, new Email());
 
-    }
-
-    public function handleBackup(Args $args, IO $io)
-    {
-
-    }
-
-    public function handleRestore(Args $args, IO $io)
-    {
-
-    }
-
-    public function handleListBackups(Args $args, IO $io)
-    {
-
-    }
-
-    public function handleRemoveBackup(Args $args, IO $io)
-    {
 
     }
 

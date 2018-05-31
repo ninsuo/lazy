@@ -9,9 +9,9 @@ trait LoggerTrait
     /**
      * @param $message
      */
-    public function raw(IO $io, $message)
+    public function raw($message)
     {
-        $io->write(
+        $this->container['io']->write(
             call_user_func_array('sprintf', array_slice(func_get_args(), 1))
         );
     }
@@ -19,17 +19,17 @@ trait LoggerTrait
     /**
      * @param $data
      */
-    public function json(IO $io, $data)
+    public function json($data)
     {
-        $this->raw($io, json_encode($data, JSON_PRETTY_PRINT));
+        $this->raw(json_encode($data, JSON_PRETTY_PRINT));
     }
 
     /**
      * @param $message
      */
-    public function log(IO $io, $message)
+    public function log($message)
     {
-        $io->writeLine(
+        $this->container['io']->writeLine(
             sprintf('%s: %s',
                 date('d/m/Y H:i:s'),
                 call_user_func_array('sprintf', array_slice(func_get_args(), 1))
@@ -40,9 +40,9 @@ trait LoggerTrait
     /**
      * @param $message
      */
-    public function info(IO $io, $message)
+    public function info($message)
     {
-        $io->writeLine(
+        $this->container['io']->writeLine(
             sprintf('<blue>%s</blue>: %s',
                 date('d/m/Y H:i:s'),
                 call_user_func_array('sprintf', array_slice(func_get_args(), 1))
@@ -53,9 +53,9 @@ trait LoggerTrait
     /**
      * @param $message
      */
-    public function error(IO $io, $message)
+    public function error($message)
     {
-        $io->writeLine(
+        $this->container['io']->writeLine(
             sprintf('<red>%s</red>: %s',
                 date('d/m/Y H:i:s'),
                 call_user_func_array('sprintf', array_slice(func_get_args(), 1))
@@ -66,9 +66,9 @@ trait LoggerTrait
     /**
      * @param $message
      */
-    public function success(IO $io, $message)
+    public function success($message)
     {
-        $io->writeLine(
+        $this->container['io']->writeLine(
             sprintf('<green>%s</green>: %s',
                 date('d/m/Y H:i:s'),
                 call_user_func_array('sprintf', array_slice(func_get_args(), 1))
