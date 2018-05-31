@@ -41,7 +41,7 @@ class WebsiteRepository extends BaseService
 
         // Initial standard (http:80) configuration in order to go through Letsencrypt challenge.
 
-        $content = $this->render(__DIR__.'/NNN-sub.domain.tld.conf.twig', [
+        $content = $this->render(__DIR__.'/NNN-sub.domain.tld-init.conf.twig', [
             'fqdn' => $fqdn,
             'email' => $email,
             'dir' => $dir,
