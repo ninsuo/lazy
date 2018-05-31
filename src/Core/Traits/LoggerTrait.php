@@ -12,7 +12,7 @@ trait LoggerTrait
     public function raw($message)
     {
         $this->container['io']->write(
-            call_user_func_array('sprintf', array_slice(func_get_args(), 1))
+            call_user_func_array('sprintf', func_get_args())
         );
     }
 
@@ -32,7 +32,7 @@ trait LoggerTrait
         $this->container['io']->writeLine(
             sprintf('%s: %s',
                 date('d/m/Y H:i:s'),
-                call_user_func_array('sprintf', array_slice(func_get_args(), 1))
+                call_user_func_array('sprintf', func_get_args())
             )
         );
     }
@@ -45,7 +45,7 @@ trait LoggerTrait
         $this->container['io']->writeLine(
             sprintf('<blue>%s</blue>: %s',
                 date('d/m/Y H:i:s'),
-                call_user_func_array('sprintf', array_slice(func_get_args(), 1))
+                call_user_func_array('sprintf', func_get_args())
             )
         );
     }
@@ -58,7 +58,7 @@ trait LoggerTrait
         $this->container['io']->writeLine(
             sprintf('<red>%s</red>: %s',
                 date('d/m/Y H:i:s'),
-                call_user_func_array('sprintf', array_slice(func_get_args(), 1))
+                call_user_func_array('sprintf', func_get_args()))
             )
         );
     }
@@ -71,7 +71,7 @@ trait LoggerTrait
         $this->container['io']->writeLine(
             sprintf('<green>%s</green>: %s',
                 date('d/m/Y H:i:s'),
-                call_user_func_array('sprintf', array_slice(func_get_args(), 1))
+                call_user_func_array('sprintf', func_get_args())
             )
         );
     }
