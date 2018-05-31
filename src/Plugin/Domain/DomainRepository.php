@@ -166,9 +166,9 @@ class DomainRepository extends BaseService
     {
         $backups = array_map(function($v) {
             $json = json_decode(file_get_contents($v), true);
-            $json['id'] = substr($v, 0, -4);
+            $json['id'] = substr($v, 0, -5);
             return $json;
-        }, glob(sprintf('%s/*.txt', $this->getBackupDirectory())));
+        }, glob(sprintf('%s/*.json', $this->getBackupDirectory())));
 
         usort($backups, function($a, $b) {
             return strtotime($a['date']) < strtotime($b['date']);
@@ -179,7 +179,7 @@ class DomainRepository extends BaseService
 
     protected function cleanBackups()
     {
-        $backups = $this->exec('ls -t :dir | grep -v \.txt', [
+        $backups = $this->exec('ls -t :dir | grep -v \.json', [
             'dir' => $this->getBackupDirectory(),
         ]);
 
@@ -235,7 +235,7 @@ class DomainRepository extends BaseService
     protected function removeBackup($id)
     {
         $backupDir = sprintf('%s/%s', $this->getBackupDirectory(), $id);
-        $backupFile = sprintf('%s.txt', $backupDir);
+        $backupFile = sprintf('%s.json', $backupDir);
 
         $this->exec('rm -rf :dir :file', [
             'dir' => $backupDir,
