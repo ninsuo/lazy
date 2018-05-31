@@ -157,7 +157,7 @@ class WebsiteRepository extends BaseService
     {
         $backups = array_map(function($v) {
             $json = json_decode(file_get_contents($v), true);
-            $json['id'] = substr($v, 0, -5);
+            $json['id'] = basename(substr($v, 0, -5));
             return $json;
         }, glob(sprintf('%s/*.json', $this->getBackupDirectory())));
 
