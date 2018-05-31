@@ -93,30 +93,29 @@ class WebsiteRepository extends BaseService
         $this->success('Website now available at https://%s.', $fqdn);
     }
 
-    public function edit($domain)
+    public function edit($fqdn)
     {
-        $backupId = $this->createBackup(sprintf('Editing domain %s', $domain));
+        $backupId = $this->createBackup(sprintf('Editing website %s', $fqdn));
 
         edit:
 
-        $file = sprintf('/etc/bind/db.%s', $domain);
+        $file = sprintf('/etc/apache2/sites-available/000-%s.conf', $fqdn);
 
         $this->exec(sprintf('%s %s', $this->getParameter('editor'), $file), [], true);
-        $this->info('This is your configuration for domain %s', $domain);
+        $this->info('This is your configuration for website %s', $fqdn);
         $this->raw(file_get_contents($file));
 
         switch ($this->prompt('Is this configuration ok?', ['yes', 'edit', 'abort'])) {
             case 'yes':
-                $this->exec('service bind9 restart');
-                $this->success('Successfully edited domain name %s',
-                    $domain);
+                $this->exec('service apache2 restart');
+                $this->success('Successfully edited website %s', $fqdn);
                 break;
             case 'edit':
                 goto edit;
             case 'abort':
                 $this->restoreBackup($backupId);
                 $this->removeBackup($backupId);
-                $this->info('Domain edition has been cancelled.');
+                $this->info('Website edition has been cancelled.');
                 break;
         }
     }

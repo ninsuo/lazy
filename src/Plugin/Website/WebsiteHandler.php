@@ -40,56 +40,28 @@ class WebsiteHandler extends BaseHandler
 
     public function handleEdit(Args $args, IO $io)
     {
-        $domain = $this->sanitizeDomain($args->getArgument('domain'));
+        $website = $this->sanitizeWebsite($args->getArgument('fqdn'));
 
-        $domains = $this->getRepository()->getDomains();
-        if (!in_array($domain, $domains->domains)) {
-            throw new StopExecutionException('Domain %s does not exist!', $domain);
+        $websites = $this->getRepository()->getWebsites();
+        if (!in_array($website, $websites->domains)) {
+            throw new StopExecutionException('Website %s does not exist!', $website);
         }
 
-        $this->getRepository()->edit($domain);
+        $this->getRepository()->edit($website);
     }
 
     public function handleRemove(Args $args, IO $io)
     {
-        $domain = $this->sanitizeDomain($args->getArgument('domain'));
+        $website = $this->sanitizeWebsite($args->getArgument('fqdn'));
 
-        $domains = $this->getRepository()->getDomains();
-        if (!in_array($domain, $domains->domains)) {
-            throw new StopExecutionException('Domain %s does not exist!', $domain);
+        $websites = $this->getRepository()->getWebsites();
+        if (!in_array($website, $websites->domains)) {
+            throw new StopExecutionException('Website %s does not exist!', $website);
         }
 
         $email = $this->sanitizeEmail();
 
-        $this->getRepository()->remove($domain, $email);
-    }
-
-    public function handlePrimary(Args $args, IO $io)
-    {
-        if (is_null($args->getArgument('domain'))) {
-            $domains = $this->getRepository()->getDomains();
-            if ($domains->primary) {
-                $this->info('Primary domain name is: <b>%s</b>', $domains->primary);
-            } else {
-                $this->info('There are no primary domain name so far.');
-            }
-
-            return;
-        }
-
-        $domain = $this->sanitizeDomain($args->getArgument('domain'));
-
-        $domains = $this->getRepository()->getDomains();
-        if (!in_array($domain, $domains->domains)) {
-            throw new StopExecutionException('Domain %s does not exist!', $domain);
-        }
-        if ($domain === $domains->primary) {
-            throw new StopExecutionException('%s is already the primary domain for this server.', $domain);
-        }
-
-        $email = $this->sanitizeEmail();
-
-        $this->getRepository()->setPrimary($domain, $email);
+        $this->getRepository()->remove($website, $email);
     }
 
     public function handleListBackups(Args $args, IO $io)
@@ -123,7 +95,7 @@ class WebsiteHandler extends BaseHandler
         );
 
         if (!is_file($config)) {
-            $this->error('Domains backup ID #%s does not exist.', $id);
+            $this->error('Websites backup ID #%s does not exist.', $id);
         }
 
         $this->getRepository()->restoreBackup($id);
