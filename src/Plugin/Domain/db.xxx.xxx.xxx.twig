@@ -12,7 +12,7 @@ $TTL	86400
 ;
 @	IN	NS	{{ domain }}.
 {% for domain in domains %}
-60	IN	PTR	{{ domain }}.
+{{ revArpa }}	IN	PTR	{{ domain }}.
 {% endfor %}
 
 {% endautoescape %}

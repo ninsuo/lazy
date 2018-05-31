@@ -139,6 +139,7 @@ class DomainRepository extends BaseService
             'email' => $email,
             'timestamp' => time(),
             'arpa' => $this->getArpa(),
+            'revArpa' => $this->getReverseArpa(),
         ]);
 
         $file = sprintf('/etc/bind/db.%s', $this->getArpa());
@@ -157,6 +158,11 @@ class DomainRepository extends BaseService
         ]);
 
         $this->success('Successfully removed the reverse dns data file.');
+    }
+
+    public function listBackups($title)
+    {
+
     }
 
     public function createBackup($title)
@@ -181,5 +187,14 @@ class DomainRepository extends BaseService
     {
         $ip = explode('.', $this->getParameter('server_ip'));
         return $ip[2].'.'.$ip[1].'.'.$ip[0];
+    }
+
+    /**
+     * @return string
+     */
+    private function getReverseArpa()
+    {
+        $ip = explode('.', $this->getParameter('server_ip'));
+        return $ip[3];
     }
 }
