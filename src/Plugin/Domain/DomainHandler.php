@@ -32,7 +32,7 @@ class DomainHandler extends BaseHandler
     {
         $domain = $this->sanitizeDomain($args->getArgument('name'));
 
-        $domains = $this->getDomains();
+        $domains = $this->getRepository()->getDomains();
         if (in_array($domain, $domains->domains)) {
             throw new StopExecutionException('Domain %s already exists!', $domain);
         }

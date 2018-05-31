@@ -62,7 +62,7 @@ class DomainRepository extends BaseService
         switch ($this->prompt('Is this configuration ok?', ['yes', 'edit', 'abort'])) {
             case 'yes':
                 $this->exec('service bind9 restart');
-                $this->success('Successfully enrolled %s', $domain);
+                $this->success('Successfully enrolled %s.', $domain);
 
                 $domains = $this->getDomains();
                 if (!$domains->primary) {
@@ -119,7 +119,7 @@ class DomainRepository extends BaseService
 
         $this->exec('service bind9 restart');
 
-        $this->success('Successfully removed domain name %s', $domain);
+        $this->success('Successfully removed domain name %s.', $domain);
 
         $domains = $this->getDomains();
         if ($domains->primary === $domain) {
