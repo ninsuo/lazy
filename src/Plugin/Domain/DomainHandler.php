@@ -103,7 +103,7 @@ class DomainHandler extends BaseHandler
         $table = new Table();
         $table->setHeaderRow(['ID', 'Date', 'Notes']);
         foreach ($backups as $backup) {
-            $table->addRow($backup['id'], $backup['date'], $backup['notes']);
+            $table->addRow([$backup['id'], $backup['date'], $backup['notes']]);
         }
 
         $table->render($io);
