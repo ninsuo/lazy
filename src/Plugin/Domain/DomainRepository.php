@@ -66,7 +66,7 @@ class DomainRepository extends BaseService
 
                 $domains = $this->getDomains();
                 if (!$domains->primary) {
-                    $this->setPrimary($domain);
+                    $this->setPrimary($domain, $email);
                 }
 
                 break;
