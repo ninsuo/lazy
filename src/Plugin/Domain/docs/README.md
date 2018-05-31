@@ -165,6 +165,3 @@ Now, in the registrar where your domain `beast.systems` is stored:
 
 - when you'll be able to ping the.beast.systems, it will mean your primary server is all set up and ready. 
 
-## Regular backups
-
-Not required for this.
