@@ -66,6 +66,5 @@ $console = new \Webmozart\Console\ConsoleApplication($configuration);
 try {
     $console->run();
 } catch (\Lazy\Core\Exception\StopExecutionException $e) {
-    return 1;
 }
 
