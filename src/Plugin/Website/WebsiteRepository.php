@@ -47,9 +47,14 @@ class WebsiteRepository extends BaseService
             'dir' => $dir,
         ]);
 
-        $file = sprintf('/etc/apache2/sites-available/000-%s.conf', $fqdn);
-        file_put_contents($file, $content);
-        $this->exec(sprintf('%s %s', $this->getParameter('editor'), $file), [], true);
+        $available = sprintf('/etc/apache2/sites-available/000-%s.conf', $fqdn);
+        $enabled = sprintf('/etc/apache2/sites-enabled/000-%s.conf', $fqdn);
+        file_put_contents($available, $content);
+        $this->exec(sprintf('%s %s', $this->getParameter('editor'), $available), [], true);
+        $this->exec('ln -sf :available :enabled', [
+            'available' => $available,
+            'enabled' => $enabled,
+        ]);
 
         // SSL (https:443) configuration
 
@@ -59,9 +64,14 @@ class WebsiteRepository extends BaseService
             'dir' => $dir,
         ]);
 
-        $file = sprintf('/etc/apache2/sites-available/000-%s-ssl.conf', $fqdn);
-        file_put_contents($file, $content);
-        $this->exec(sprintf('%s %s', $this->getParameter('editor'), $file), [], true);
+        $available = sprintf('/etc/apache2/sites-available/000-%s-ssl.conf', $fqdn);
+        $enabled = sprintf('/etc/apache2/sites-enabled/000-%s-ssl.conf', $fqdn);
+        file_put_contents($available, $content);
+        $this->exec(sprintf('%s %s', $this->getParameter('editor'), $available), [], true);
+        $this->exec('ln -sf :available :enabled', [
+            'available' => $available,
+            'enabled' => $enabled,
+        ]);
 
         // Create SSL certificate and restart service
 
