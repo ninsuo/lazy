@@ -38,7 +38,7 @@ class DomainRepository extends BaseService
         return $domains;
     }
 
-    public function createDomain($name, $email)
+    public function create($name, $email)
     {
         $domains = $this->getDomains();
 

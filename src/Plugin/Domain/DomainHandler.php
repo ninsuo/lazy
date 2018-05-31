@@ -43,12 +43,17 @@ class DomainHandler extends BaseHandler
         $domain = trim(mb_strtolower($args->getArgument('name')), '.');
         $email = preg_replace("/[^a-z0-9]/", '.', $email);
 
-        $this->getRepository()->createDomain($domain, $email);
+        $this->getRepository()->create($domain, $email);
     }
 
     public function handleEdit(Args $args, IO $io)
     {
-        $this->info($this->prompt("Hello world?", ['yes', 'no']));
+        $domain = $args->getArgument('name');
+        $this->validate('domain', $domain, new Regex('!^[a-zA-Z0-9\.]+$!'));
+
+        $domain = trim(mb_strtolower($args->getArgument('name')), '.');
+
+        $this->getRepository()->edit($domain);
     }
 
     /**
