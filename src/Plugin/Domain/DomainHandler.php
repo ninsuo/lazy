@@ -28,7 +28,7 @@ class DomainHandler extends BaseHandler
         $table->render($io);
     }
 
-    public function handleCreate(Args $args, IO $io)
+    public function handleAdd(Args $args, IO $io)
     {
         $domain = $this->sanitizeDomain($args->getArgument('domain'));
 
