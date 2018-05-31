@@ -72,7 +72,7 @@ class WebsiteRepository extends BaseService
             'enabled' => $enabled,
         ]);
 
-        // Standard (http:80) configuration
+        // Final and complete (http:80 and https:443) configuration
 
         $content = $this->render(__DIR__.'/NNN-sub.domain.tld.conf.twig', [
             'fqdn' => $fqdn,
@@ -88,21 +88,7 @@ class WebsiteRepository extends BaseService
             'enabled' => $enabled,
         ]);
 
-        // SSL (https:443) configuration
-
-        $content = $this->render(__DIR__.'/NNN-sub.domain.tld-ssl.conf.twig', [
-            'fqdn' => $fqdn,
-            'email' => $email,
-            'dir' => $dir,
-        ]);
-
-        $available = sprintf('/etc/apache2/sites-available/000-%s-ssl.conf', $fqdn);
-        $enabled = sprintf('/etc/apache2/sites-enabled/000-%s-ssl.conf', $fqdn);
-        file_put_contents($available, $content);
-        $this->exec('ln -sf :available :enabled', [
-            'available' => $available,
-            'enabled' => $enabled,
-        ]);
+        $this->exec('service apache2 restart');
 
         $this->success('Website now available at https://%s.', $fqdn);
     }
