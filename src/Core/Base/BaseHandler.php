@@ -14,15 +14,9 @@ abstract class BaseHandler extends BaseService
         }
 
         $validator  = Validation::createValidator();
-        $violations = 0;
         $errors = $validator->validate($value, $constraints);
         foreach ($errors as $error) {
-            $violations++;
-            $this->error('Error validating value <red>%s</red> for %s: %s', $value, $name, $error->getMessage());
-        }
-
-        if ($violations) {
-            throw new StopExecutionException();
+            throw new StopExecutionException('Error validating value <red>%s</red> for %s: %s', $value, $name, $error->getMessage());
         }
     }
 }

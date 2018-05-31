@@ -135,7 +135,7 @@ class DomainHandler extends BaseHandler
 
     public function sanitizeDomain($domain)
     {
-        $this->validate('domain', $domain, new Regex('!^[a-zA-Z0-9\.]+$!'));
+        $this->validate('domain', $domain, new Regex('!^[a-zA-Z0-9\.\-]+$!'));
 
         return trim(mb_strtolower($domain), '.');
     }
