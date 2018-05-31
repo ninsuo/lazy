@@ -39,6 +39,34 @@ class WebsiteRepository extends BaseService
         file_put_contents(sprintf('%s/index.html', $exposed), sprintf('Hello, %s!', $fqdn));
         $this->exec('mkdir -p :dir', ['dir' => sprintf('%s/logs', $dir)]);
 
+        // Initial standard (http:80) configuration in order to go through Letsencrypt challenge.
+
+        $content = $this->render(__DIR__.'/NNN-sub.domain.tld.conf.twig', [
+            'fqdn' => $fqdn,
+            'email' => $email,
+            'dir' => $dir,
+        ]);
+
+        $available = sprintf('/etc/apache2/sites-available/000-%s-init.conf', $fqdn);
+        $enabled = sprintf('/etc/apache2/sites-enabled/000-%s-init.conf', $fqdn);
+        file_put_contents($available, $content);
+        $this->exec('ln -sf :available :enabled', [
+            'available' => $available,
+            'enabled' => $enabled,
+        ]);
+
+        $this->exec('service apache2 restart');
+
+        // Create SSL certificate
+
+        if (!is_file(sprintf('/etc/letsencrypt/renewal/%s.conf', $fqdn))) {
+            $this->exec('certbot --non-interactive --agree-tos --email :email --installer apache --webroot --webroot-path=:webroot --domains :fqdn', [
+                'webroot' => sprintf('%s/exposed', $dir),
+                'email' => $this->getParameter('admin_email'),
+                'fqdn' => $fqdn,
+            ]);
+        }
+
         // Standard (http:80) configuration
 
         $content = $this->render(__DIR__.'/NNN-sub.domain.tld.conf.twig', [
@@ -72,18 +100,6 @@ class WebsiteRepository extends BaseService
             'available' => $available,
             'enabled' => $enabled,
         ]);
-
-        // Create SSL certificate and restart service
-
-        if (!is_file(sprintf('/etc/letsencrypt/renewal/%s.conf', $fqdn))) {
-            $this->exec('certbot --non-interactive --agree-tos --email :email --apache --webroot --webroot-path=:webroot --domains :fqdn', [
-                'webroot' => sprintf('%s/exposed', $dir),
-                'email' => $this->getParameter('admin_email'),
-                'fqdn' => $fqdn,
-            ]);
-        }
-
-        $this->exec('service apache2 restart');
 
         $this->success('Website now available at https://%s.', $fqdn);
     }
