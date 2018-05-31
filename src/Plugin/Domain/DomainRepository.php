@@ -63,15 +63,24 @@ class DomainRepository extends BaseService
         $file = sprintf('/etc/bind/db.%s', $name);
         file_put_contents($file, $content);
 
+        edit:
         $this->exec(sprintf('%s %s', $this->getParameter('editor'), $file), [], true);
 
         $this->info('This is your configuration for domain %s', $name);
         $this->raw(file_get_contents($file));
-        if ($this->prompt('Save?', ['yes', 'no']) === 'yes') {
-            $this->exec('service bind9 restart');
-            $this->success("✅ Successfully enrolled %s", $name);
-        } else {
-            $this->removeBackup($backupId);
+
+        switch ($this->prompt('Is this configuration ok?', ['yes', 'edit', 'abort'])) {
+            case 'yes':
+                $this->exec('service bind9 restart');
+                $this->success('✅ Successfully enrolled %s', $name);
+                break;
+            case 'edit':
+                goto edit;
+            case 'abort':
+                unlink($file);
+                $this->removeBackup($backupId);
+                $this->error('❌ Domain creation has been cancelled.');
+                break;
         }
     }
 
