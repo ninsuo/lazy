@@ -135,6 +135,8 @@ class DomainRepository extends BaseService
 
     public function setPrimary($domain, $email)
     {
+        $this->createBackup(sprintf('Setting domain %s as primary', $domain));
+
         $content = $this->render(__DIR__.'/db.xxx.xxx.xxx.twig', [
             'domains' => $this->getDomains()->domains,
             'domain' => $domain,
@@ -151,7 +153,7 @@ class DomainRepository extends BaseService
         $this->success('Successfully set domain name %s as primary.', $domain);
     }
 
-    public function removePrimary()
+    protected function removePrimary()
     {
         $file = sprintf('/etc/bind/db.%s', $this->getArpa());
 
