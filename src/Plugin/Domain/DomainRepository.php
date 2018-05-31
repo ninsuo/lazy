@@ -60,7 +60,7 @@ class DomainRepository extends BaseService
         $file = sprintf('/etc/bind/db.%s', $name);
         file_put_contents($file, $content);
 
-        $this->exec(sprintf('%s %s', $this->getParameter('editor'), $tmpfile), [], true);
+        $this->exec(sprintf('%s %s', $this->getParameter('editor'), $file), [], true);
         $this->exec('service bind9 restart');
 
         $this->success("✅   Successfully enrolled %s", $name);
