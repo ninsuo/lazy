@@ -4,40 +4,25 @@ namespace Lazy\Plugin\Domain;
 
 use Lazy\Core\Base\BaseService;
 use Ramsey\Uuid\Uuid;
+use Webmozart\Console\UI\Component\Table;
 
-class DomainRepository extends BaseService
+class WebsiteRepository extends BaseService
 {
     /**
-     * @return Domains
+     * @return array
      */
-    public function getDomains()
+    public function getWebsites()
     {
-        $domains = new Domains();
-
-        clearstatcache();
-
-        $domains->domains = array_filter(
-            array_map(function($elem) {
-                $domain = substr(basename($elem), 3);
-                if (preg_match('/^[0-9\.]+$/', $domain) || in_array($domain, ['empty', 'local', 'root'])) {
-                    return false;
-                }
-
-                return $domain;
-            }, glob('/etc/bind/db.*'))
-        );
-
-        $file = '/etc/bind/db.' . $this->getArpa();
-
-        if (is_file($file)) {
-            $primary = $this->exec("cat :file | grep IN | grep SOA | cut -d '\t' -f 4 | cut -d ' ' -f 1", [
-                'file' => $file,
-            ]);
-
-            $domains->primary = substr($primary->stdout, 0, -1);
+        $websites = [];
+        $output = $this->exec("grep -Ri 'ServerName' /etc/apache2/sites-available");
+        foreach (array_filter(explode("\n", $output)) as $line) {
+            $tokens = array_values(array_filter(explode(' ', str_replace("\t", ' ', $line))));
+            if (count($tokens) == 3) {
+                $websites[] = $tokens[2];
+            }
         }
 
-        return $domains;
+        return array_unique($websites);
     }
 
     public function create($domain, $email)
@@ -132,36 +117,6 @@ class DomainRepository extends BaseService
         }
     }
 
-    public function setPrimary($domain, $email)
-    {
-        $this->createBackup(sprintf('Setting domain %s as primary', $domain));
-
-        $content = $this->render(__DIR__.'/db.xxx.xxx.xxx.twig', [
-            'domains' => $this->getDomains()->domains,
-            'domain' => $domain,
-            'email' => $email,
-            'timestamp' => time(),
-            'arpa' => $this->getArpa(),
-            'revArpa' => $this->getReverseArpa(),
-        ]);
-
-        $file = sprintf('/etc/bind/db.%s', $this->getArpa());
-        file_put_contents($file, $content);
-
-        $this->exec('service bind9 restart');
-        $this->success('Successfully set domain name %s as primary.', $domain);
-    }
-
-    protected function removePrimary()
-    {
-        $file = sprintf('/etc/bind/db.%s', $this->getArpa());
-
-        $this->exec('rm :file', [
-            'file' => $file,
-        ]);
-
-        $this->success('Successfully removed the reverse dns data file.');
-    }
 
     public function listBackups()
     {
@@ -201,7 +156,7 @@ class DomainRepository extends BaseService
         $id = Uuid::uuid4();
         $backupDir = sprintf('%s/%s', $this->getBackupDirectory(), $id);
 
-        $this->exec('cp -r /etc/bind :dir', [
+        $this->exec('cp -r /etc/apache2 :dir', [
             'dir' => $backupDir,
         ]);
 
@@ -212,15 +167,17 @@ class DomainRepository extends BaseService
             'notes' => $title,
         ]));
 
-        $this->success('Successfully backed up domains in %s', $id);
+        $this->success('Successfully backed up websites in %s', $id);
     }
 
     public function restoreBackup($id)
     {
+        $this->exec('service apache2 stop');
+
         $this->createBackup('Restoring backup #%s', $id);
 
         $sourceDir = sprintf('%s/%s', $this->getBackupDirectory(), $id);
-        $targetDir = '/etc/bind';
+        $targetDir = '/etc/apache2';
 
         $this->exec('rm -rf :target', [
             'target' => $targetDir,
@@ -231,7 +188,7 @@ class DomainRepository extends BaseService
             'target' => $targetDir,
         ]);
 
-        $this->exec('service bind9 restart');
+        $this->exec('service apache2 start');
 
         $this->success('Successfully restored backup #%s', $id);
     }
@@ -252,7 +209,7 @@ class DomainRepository extends BaseService
      */
     public function getBackupDirectory()
     {
-        $dir = $this->getParameter('backup_dir') . '/domain';
+        $dir = $this->getParameter('backup_dir') . '/website';
 
         if (!is_dir($dir)) {
             $this->exec('mkdir -p :dir', [
@@ -261,23 +218,5 @@ class DomainRepository extends BaseService
         }
 
         return $dir;
-    }
-
-    /**
-     * @return string
-     */
-    private function getArpa()
-    {
-        $ip = explode('.', $this->getParameter('server_ip'));
-        return $ip[2].'.'.$ip[1].'.'.$ip[0];
-    }
-
-    /**
-     * @return string
-     */
-    private function getReverseArpa()
-    {
-        $ip = explode('.', $this->getParameter('server_ip'));
-        return $ip[3];
     }
 }

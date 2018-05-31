@@ -43,7 +43,7 @@ abstract class BaseService
 
         $executed = new Execution($query, $process->getOutput(), $process->getErrorOutput(), $process->getExitCode());
 
-        if ($this->container['verbose']) {
+        if ($this->container['verbose'] || $executed->code) {
             $this->container['io']->writeLine($executed);
         }
 
