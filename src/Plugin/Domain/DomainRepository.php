@@ -187,7 +187,8 @@ class DomainRepository extends BaseService
 
         $backups = explode("\n", $exec->stdout);
 
-        if ($count = count($backups) > 3) {
+        $count = count($backups);
+        if ($count > 3) {
             for ($i = 3; $i < $count; $i++) {
                 $this->removeBackup($backups[$i]);
             }
