@@ -88,7 +88,7 @@ class DomainHandler extends BaseHandler
             throw new StopExecutionException('Domain %s does not exist!', $domain);
         }
         if ($domain === $domains->primary) {
-            throw new StopExecutionException('%s is already the primary domain for this server.');
+            throw new StopExecutionException('%s is already the primary domain for this server.', $domain);
         }
 
         $email = $this->sanitizeEmail();
