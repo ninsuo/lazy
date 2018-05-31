@@ -3,7 +3,6 @@
 namespace Lazy\Plugin\Domain;
 
 use Lazy\Core\Base\BaseService;
-use Lazy\Core\Exception\StopExecutionException;
 
 class DomainRepository extends BaseService
 {
@@ -13,6 +12,8 @@ class DomainRepository extends BaseService
     public function getDomains()
     {
         $domains = new Domains();
+
+        clearstatcache();
 
         $domains->domains = array_filter(
             array_map(function($elem) {
@@ -38,36 +39,36 @@ class DomainRepository extends BaseService
         return $domains;
     }
 
-    public function create($name, $email)
+    public function create($domain, $email)
     {
-        $domains = $this->getDomains();
-
-        if (in_array($name, $domains->domains)) {
-            throw new StopExecutionException('Domain %s already exists!', $name);
-        }
-
-        $backupId = $this->createBackup(sprintf('Creating domain %s', $name));
+        $backupId = $this->createBackup(sprintf('Creating domain %s', $domain));
 
         $content = $this->render(__DIR__.'/db.domain.tld.twig', [
-            'domain' => $name,
-            'email' => trim(str_replace('@', '.', $email), '.'),
+            'domain' => $domain,
+            'email' => $email,
             'timestamp' => time(),
             'server_ip' => $this->getParameter('server_ip'),
         ]);
 
-        $file = sprintf('/etc/bind/db.%s', $name);
+        $file = sprintf('/etc/bind/db.%s', $domain);
         file_put_contents($file, $content);
 
         edit:
 
         $this->exec(sprintf('%s %s', $this->getParameter('editor'), $file), [], true);
-        $this->info('This is your configuration for domain %s', $name);
+        $this->info('This is your configuration for domain %s', $domain);
         $this->raw(file_get_contents($file));
 
         switch ($this->prompt('Is this configuration ok?', ['yes', 'edit', 'abort'])) {
             case 'yes':
                 $this->exec('service bind9 restart');
-                $this->success('Successfully enrolled %s', $name);
+                $this->success('Successfully enrolled %s', $domain);
+
+                $domains = $this->getDomains();
+                if (!$domains->primary) {
+                    $this->setPrimary($domain);
+                }
+
                 break;
             case 'edit':
                 goto edit;
@@ -79,28 +80,23 @@ class DomainRepository extends BaseService
         }
     }
 
-    public function edit($name)
+    public function edit($domain)
     {
-        $domains = $this->getDomains();
-
-        if (!in_array($name, $domains->domains)) {
-            throw new StopExecutionException('Domain %s does not exists!', $name);
-        }
-
-        $backupId = $this->createBackup(sprintf('Editing domain %s', $name));
+        $backupId = $this->createBackup(sprintf('Editing domain %s', $domain));
 
         edit:
 
-        $file = sprintf('/etc/bind/db.%s', $name);
+        $file = sprintf('/etc/bind/db.%s', $domain);
 
         $this->exec(sprintf('%s %s', $this->getParameter('editor'), $file), [], true);
-        $this->info('This is your configuration for domain %s', $name);
+        $this->info('This is your configuration for domain %s', $domain);
         $this->raw(file_get_contents($file));
 
         switch ($this->prompt('Is this configuration ok?', ['yes', 'edit', 'abort'])) {
             case 'yes':
                 $this->exec('service bind9 restart');
-                $this->success('Successfully edited %s', $name);
+                $this->success('Successfully edited domain name %s',
+                    $domain);
                 break;
             case 'edit':
                 goto edit;
@@ -110,6 +106,48 @@ class DomainRepository extends BaseService
                 $this->info('Domain edition has been cancelled.');
                 break;
         }
+    }
+
+    public function remove($domain, $email)
+    {
+        $this->createBackup(sprintf('Removing domain %s', $domain));
+        $file = sprintf('/etc/bind/db.%s', $domain);
+        unlink($file);
+        $this->exec('service bind9 restart');
+        $this->success('Successfully removed domain name %s', $domain);
+
+        $domains = $this->getDomains();
+        if ($domains->primary === $domain) {
+            if (count($domains) == 0) {
+                $this->removePrimary();
+            } else {
+                $this->setPrimary(reset($domains->domains), $email);
+            }
+        }
+    }
+
+    public function setPrimary($domain, $email)
+    {
+        $content = $this->render(__DIR__.'/db.domain.tld.twig', [
+            'domains' => $this->getDomains(),
+            'domain' => $domain,
+            'email' => $email,
+            'timestamp' => time(),
+            'arpa' => $this->getArpa(),
+        ]);
+
+        $file = sprintf('/etc/bind/db.%s', $this->getArpa());
+        file_put_contents($file, $content);
+
+        $this->exec('service bind9 restart');
+        $this->success('Successfully set domain name %s as primary.', $domain);
+    }
+
+    public function removePrimary()
+    {
+        $file = sprintf('/etc/bind/db.%s', $this->getArpa());
+        unlink($file);
+        $this->success('Successfully removed the reverse dns data file.');
     }
 
     public function createBackup($title)

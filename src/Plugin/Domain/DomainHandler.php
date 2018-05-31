@@ -28,32 +28,88 @@ class DomainHandler extends BaseHandler
         $table->render($io);
     }
 
-    public function handleEnroll(Args $args, IO $io)
+    public function handleCreate(Args $args, IO $io)
     {
-        $domain = $args->getArgument('name');
+        $domain = $this->sanitizeDomain($args->getArgument('name'));
 
-        $email = $args->getArgument('email');
-        if (is_null($email)) {
-            $email = sprintf('admin@%s', $domain);
+        $domains = $this->getDomains();
+        if (in_array($domain, $domains->domains)) {
+            throw new StopExecutionException('Domain %s already exists!', $domain);
         }
 
-        $this->validate('domain', $domain, new Regex('!^[a-zA-Z0-9\.]+$!'));
-        $this->validate('email', $email, new Email());
-
-        $domain = trim(mb_strtolower($args->getArgument('name')), '.');
-        $email = preg_replace("/[^a-z0-9]/", '.', $email);
+        $email = $this->sanitizeEmail();
 
         $this->getRepository()->create($domain, $email);
     }
 
     public function handleEdit(Args $args, IO $io)
     {
-        $domain = $args->getArgument('name');
-        $this->validate('domain', $domain, new Regex('!^[a-zA-Z0-9\.]+$!'));
+        $domain = $this->sanitizeDomain($args->getArgument('name'));
 
-        $domain = trim(mb_strtolower($args->getArgument('name')), '.');
+        $domains = $this->getRepository()->getDomains();
+        if (!in_array($domain, $domains->domains)) {
+            throw new StopExecutionException('Domain %s does not exist!', $domain);
+        }
 
         $this->getRepository()->edit($domain);
+    }
+
+    public function handleRemove(Args $args, IO $io)
+    {
+        $domain = $this->sanitizeDomain($args->getArgument('name'));
+
+        $domains = $this->getRepository()->getDomains();
+        if (!in_array($domain, $domains->domains)) {
+            throw new StopExecutionException('Domain %s does not exist!', $domain);
+        }
+
+        $email = $this->sanitizeEmail();
+
+        $this->getRepository()->remove($domain, $email);
+    }
+
+    public function handlePrimary(Args $args, IO $io)
+    {
+        if (is_null($args->getArgument('name'))) {
+            $domains = $this->getRepository()->getDomains();
+            if ($domains->primary) {
+                $this->info('Primary domain name is: <b>%s</b>');
+            } else {
+                $this->info('There are no primary domain name so far.');
+            }
+
+            return;
+        }
+
+        $domain = $this->sanitizeDomain($args->getArgument('name'));
+
+        $domains = $this->getRepository()->getDomains();
+        if (!in_array($domain, $domains->domains)) {
+            throw new StopExecutionException('Domain %s does not exist!', $domain);
+        }
+        if ($domain === $domains->primary) {
+            throw new StopExecutionException('%s is already the primary domain for this server.');
+        }
+
+        $email = $this->sanitizeEmail();
+
+        $this->getRepository()->setPrimary($domain, $email);
+    }
+
+    public function sanitizeDomain($domain)
+    {
+        $this->validate('domain', $domain, new Regex('!^[a-zA-Z0-9\.]+$!'));
+
+        return trim(mb_strtolower($domain), '.');
+    }
+
+    public function sanitizeEmail()
+    {
+        $email = $this->getParameter('admin_email');
+
+        $this->validate('email', $email, new Email());
+
+        return trim(preg_replace("/[^a-z0-9]/", '.', $email), '.');
     }
 
     /**
