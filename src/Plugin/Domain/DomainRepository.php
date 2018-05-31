@@ -3,6 +3,7 @@
 namespace Lazy\Plugin\Domain;
 
 use Lazy\Core\Base\BaseService;
+use Lazy\Core\Exception\StopExecutionException;
 
 class DomainRepository extends BaseService
 {
@@ -46,7 +47,6 @@ class DomainRepository extends BaseService
     public function createDomain($name, $email)
     {
         $domains = $this->getDomains();
-        var_dump($name, $domains->domains);
 
         if (in_array($name, $domains->domains)) {
             $this->error('Domain %s already exists!', $name);
