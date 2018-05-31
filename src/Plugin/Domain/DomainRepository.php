@@ -251,7 +251,7 @@ class DomainRepository extends BaseService
         $dir = $this->getParameter('backup_dir') . '/domain';
 
         if (!is_dir($dir)) {
-            $this->exec('mkdir :dir', [
+            $this->exec('mkdir -p :dir', [
                 'dir' => $dir,
             ]);
         }
