@@ -14,7 +14,8 @@ class Configuration extends DefaultApplicationConfig
         $this
             ->setName('lazy')
             ->setDisplayName('🍔 lazy 🍔')
-            ->setVersion('0.0.1');
+            ->setVersion('0.0.1')
+            ->setCatchExceptions(true);
 
         // Configure color tags (to use <red>bob</red> for example)
         $colors = ['black', 'red', 'green', 'yellow', 'blue', 'magenta', 'cyan', 'white'];

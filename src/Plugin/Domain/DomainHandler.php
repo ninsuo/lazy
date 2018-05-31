@@ -30,16 +30,18 @@ class DomainHandler extends BaseHandler
 
     public function handleEnroll(Args $args, IO $io)
     {
-        $domain = trim(mb_strtolower($args->getArgument('name')), '.');
+        $domain = $args->getArgument('name');
 
         $email = $args->getArgument('email');
         if (is_null($email)) {
             $email = sprintf('admin@%s', $domain);
         }
-        $email = preg_replace("/[^a-z0-9]/", '.', $email);
 
-        $this->validate('domain', $domain, new Regex('!^[a-z0-9\.]+$!'));
+        $this->validate('domain', $domain, new Regex('!^[a-zA-Z0-9\.]+$!'));
         $this->validate('email', $email, new Email());
+
+        $domain = trim(mb_strtolower($args->getArgument('name')), '.');
+        $email = preg_replace("/[^a-z0-9]/", '.', $email);
 
         $this->getRepository()->createDomain($domain, $email);
     }
