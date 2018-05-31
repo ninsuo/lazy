@@ -21,7 +21,7 @@ class DomainHandler extends BaseHandler
         foreach ($domains->domains as $domain) {
             $table->addRow([
                 $domain,
-                $domain === $domains->primary ? '<green>y</green>' : '<red>no</red>',
+                $domain === $domains->primary ? '<green>yes</green>' : '<red>no</red>',
             ]);
         }
 
