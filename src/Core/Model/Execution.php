@@ -7,66 +7,37 @@ class Execution
     /**
      * @var string
      */
-    private $query;
+    public $query;
 
     /**
      * @var string
      */
-    private $stdout;
+    public $stdout;
 
     /**
      * @var string
      */
-    private $stderr;
+    public $stderr;
 
     /**
      * @var integer
      */
-    private $code;
+    public $code;
 
     public function __construct($query, $stdout, $stderr, $code)
     {
         $this->query  = $query;
-        $this->stdout = $stdout;
-        $this->stderr = $stderr;
+        $this->stdout = trim($stdout);
+        $this->stderr = trim($stderr);
         $this->code   = $code;
-    }
-
-    /**
-     * @return string
-     */
-    public function getQuery()
-    {
-        return $this->query;
-    }
-
-    /**
-     * @return string
-     */
-    public function getStdout()
-    {
-        return $this->stdout;
-    }
-
-    /**
-     * @return string
-     */
-    public function getStderr()
-    {
-        return $this->stderr;
-    }
-
-    /**
-     * @return integer
-     */
-    public function getCode()
-    {
-        return $this->code;
     }
 
     public function __toString(): string
     {
-        $execution = sprintf('Executed: <yellow>%s</yellow>', $this->query);
+        $execution = str_repeat('-', 80);
+        $execution .= PHP_EOL;
+
+        $execution .= sprintf('Executed: <yellow>%s</yellow>', $this->query);
 
         if ($this->code) {
             $execution .= sprintf(' (status code <red>%s</red>)', $this->code);

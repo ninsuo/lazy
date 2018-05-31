@@ -36,6 +36,8 @@ abstract class BaseService
 
         $exec = new Execution($query, $process->getOutput(), $process->getErrorOutput(), $process->getExitCode());
 
+        echo $exec;
+
         return $exec;
     }
 
