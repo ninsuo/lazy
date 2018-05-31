@@ -41,7 +41,7 @@ class WebsiteConfiguration extends BaseConfiguration
                 ->end()
                 ->beginSubCommand('backup')
                     ->setHandlerMethod('handleBackupNow')
-                    ->setDescription('Run a new website configuration backup')
+                    ->setDescription('Backup current websites configuration')
                     ->addArgument('notes', Argument::OPTIONAL, '(optional) backup details')
                 ->end()
                 ->beginSubCommand('restore')

@@ -1,6 +1,6 @@
 <?php
 
-namespace Lazy\Plugin\Domain;
+namespace Lazy\Plugin\Website;
 
 use Lazy\Core\Base\BaseService;
 use Ramsey\Uuid\Uuid;
