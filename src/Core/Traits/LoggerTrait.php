@@ -58,7 +58,7 @@ trait LoggerTrait
         $this->container['io']->writeLine(
             sprintf('<red>%s</red>: %s',
                 date('d/m/Y H:i:s'),
-                call_user_func_array('sprintf', func_get_args()))
+                call_user_func_array('sprintf', func_get_args())
             )
         );
     }
