@@ -188,8 +188,8 @@ class DomainRepository extends BaseService
         $backups = explode("\n", $exec->stdout);
 
         $count = count($backups);
-        if ($count > 3) {
-            for ($i = 3; $i < $count; $i++) {
+        if ($count > 9) {
+            for ($i = 9; $i < $count; $i++) {
                 $this->removeBackup($backups[$i]);
             }
         }
@@ -209,7 +209,7 @@ class DomainRepository extends BaseService
         $backupTrace = sprintf('%s/%s.json', $this->getBackupDirectory(), $id);
 
         file_put_contents($backupTrace, json_encode([
-            'date' => date('d/m/Y H:i:s'),
+            'date' => date('Y-m-d H:i:s'),
             'notes' => $title,
         ]));
 
