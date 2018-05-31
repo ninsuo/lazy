@@ -24,7 +24,7 @@ class DomainConfiguration extends BaseConfiguration
                     ->setHandlerMethod('handleEnroll')
                     ->setDescription('Enroll a new domain name')
                     ->addArgument('name', Argument::REQUIRED, 'The domain name to create')
-                    ->addOption('email', null, Option::STRING, 'A valid email address')
+                    ->addArgument('email', Argument::OPTIONAL, 'A valid email address')
                 ->end()
                 ->beginSubCommand('edit')
                     ->setHandlerMethod('handleEdit')
