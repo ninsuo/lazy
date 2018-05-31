@@ -38,8 +38,8 @@ class DomainHandler extends BaseHandler
         }
         $email = preg_replace("/[^a-z0-9]/", '.', $email);
 
-        $this->validate($domain, new Regex('!^[a-z0-9]+$!'));
-        $this->validate($email, new Email());
+        $this->validate('domain', $domain, new Regex('!^[a-z0-9]+$!'));
+        $this->validate('email', $email, new Email());
 
         $this->getRepository()->createDomain($domain, $email);
     }
