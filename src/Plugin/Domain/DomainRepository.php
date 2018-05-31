@@ -112,7 +112,9 @@ class DomainRepository extends BaseService
     {
         $this->createBackup(sprintf('Removing domain %s', $domain));
         $file = sprintf('/etc/bind/db.%s', $domain);
-        unlink($file);
+        $this->exec('rm :file', [
+            'file' => $file
+        ]);
         $this->exec('service bind9 restart');
         $this->success('Successfully removed domain name %s', $domain);
 
@@ -146,7 +148,11 @@ class DomainRepository extends BaseService
     public function removePrimary()
     {
         $file = sprintf('/etc/bind/db.%s', $this->getArpa());
-        unlink($file);
+
+        $this->exec('rm :file', [
+            'file' => $file,
+        ]);
+
         $this->success('Successfully removed the reverse dns data file.');
     }
 
