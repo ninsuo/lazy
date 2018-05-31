@@ -133,7 +133,7 @@ class DomainRepository extends BaseService
 
     public function setPrimary($domain, $email)
     {
-        $content = $this->render(__DIR__.'/db.domain.tld.twig', [
+        $content = $this->render(__DIR__.'/db.xxx.xxx.xxx.twig', [
             'domains' => $this->getDomains(),
             'domain' => $domain,
             'email' => $email,
