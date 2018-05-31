@@ -51,29 +51,20 @@ class DomainRepository extends BaseService
             throw new StopExecutionException();
         }
 
+        $content = $this->render(__DIR__.'/db.domain.tld.twig', [
+            'domain' => $name,
+            'email' => trim(str_replace('@', '.', $email), '.') . '.',
+            'timestamp' => time(),
+        ]);
 
+        $file = sprintf('/etc/bind/db.%s', $name);
+        file_put_contents($file, $content);
 
-        /*
-{% autoescape false %}
-;
-; BIND data file for {{ name }}
-;
-$ORIGIN {{ domain }}.
-$TTL	86400
-@	IN	SOA	ns.{{ domain }}. {{ email }}. (
-			{{ timestamp }}	; Serial
-			10800		; Refresh
-			3600		; Retry
-			604800		; Expire
-			10800 )	; Negative Cache TTL
-;
-@	IN	NS	ns.{{ domain }}.
-@	IN	TXT	"v=spf1 +a +mx +ip4:{{ server_ip }} -all"
-@	IN	A	{{ server_ip }}
-*	IN	A	{{ server_ip }}
+        $this->exec(sprintf('%s %s', $this->getParameter('editor'), $tmpfile), [], true);
+        $this->exec('service bind9 restart');
 
-{% endautoescape %}
-
-         */
+        $this->success("✅   Successfully enrolled %s", $name);
     }
+
+
 }

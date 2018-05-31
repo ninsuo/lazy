@@ -5,6 +5,7 @@ namespace Lazy\Plugin\Domain;
 use Lazy\Core\Base\BaseHandler;
 use Lazy\Core\Exception\StopExecutionException;
 use Symfony\Component\Validator\Constraints\Email;
+use Symfony\Component\Validator\Constraints\Regex;
 use Webmozart\Console\Api\Args\Args;
 use Webmozart\Console\Api\IO\IO;
 use Webmozart\Console\UI\Component\Table;
@@ -29,16 +30,18 @@ class DomainHandler extends BaseHandler
 
     public function handleEnroll(Args $args, IO $io)
     {
-        $domain = $args->getArgument('name');
+        $domain = mb_strtolower($args->getArgument('name'));
 
         $email = $args->getArgument('email');
         if (is_null($email)) {
             $email = sprintf('admin@%s', $domain);
         }
+        $email = preg_replace("/[^a-z0-9]/", '.', $email);
 
+        $this->validate($domain, new Regex('!^[a-z0-9]+$!'));
         $this->validate($email, new Email());
 
-
+        $this->getRepository()->createDomain($domain, $email);
     }
 
     /**
