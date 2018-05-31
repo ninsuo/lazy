@@ -75,14 +75,14 @@ class WebsiteRepository extends BaseService
 
         // Create SSL certificate and restart service
 
-        $this->exec('service apache2 restart');
-
         if (!is_file(sprintf('/etc/letsencrypt/renewal/%s.conf', $fqdn))) {
             $this->exec('certbot --non-interactive --agree-tos --email :email --apache --domains :fqdn', [
                 'email' => $this->getParameter('admin_email'),
                 'fqdn' => $fqdn,
             ]);
         }
+
+        $this->exec('service apache2 restart');
 
         $this->success('Website now available at https://%s.', $fqdn);
     }

@@ -4,8 +4,8 @@
         ServerName {{ fqdn }}
 
         # Note that no SSL certificate will be generated for wilcards
-        # ServerAlias www.{{ website }}
-        # ServerAlias *.{{ website }}
+        # ServerAlias www.{{ fqdn }}
+        # ServerAlias *.{{ fqdn }}
 
         ServerAdmin {{ email }}
         DocumentRoot {{ dir }}/exposed
