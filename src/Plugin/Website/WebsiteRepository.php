@@ -60,7 +60,7 @@ class WebsiteRepository extends BaseService
         // Create SSL certificate and clear up temp configuration
 
         if (!is_file(sprintf('/etc/letsencrypt/renewal/%s.conf', $fqdn))) {
-            $this->exec('certbot --non-interactive --agree-tos --email :email certonly --standalone --webroot --webroot-path=:webroot --domains :fqdn', [
+            $this->exec('certbot --non-interactive --agree-tos --email :email certonly --webroot --webroot-path=:webroot --domains :fqdn', [
                 'webroot' => sprintf('%s/exposed', $dir),
                 'email' => $this->getParameter('admin_email'),
                 'fqdn' => $fqdn,
