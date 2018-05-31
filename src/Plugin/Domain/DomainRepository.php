@@ -111,11 +111,14 @@ class DomainRepository extends BaseService
     public function remove($domain, $email)
     {
         $this->createBackup(sprintf('Removing domain %s', $domain));
+
         $file = sprintf('/etc/bind/db.%s', $domain);
         $this->exec('rm :file', [
             'file' => $file
         ]);
+
         $this->exec('service bind9 restart');
+
         $this->success('Successfully removed domain name %s', $domain);
 
         $domains = $this->getDomains();

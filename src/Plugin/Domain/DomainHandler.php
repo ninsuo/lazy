@@ -73,7 +73,7 @@ class DomainHandler extends BaseHandler
         if (is_null($args->getArgument('name'))) {
             $domains = $this->getRepository()->getDomains();
             if ($domains->primary) {
-                $this->info('Primary domain name is: <b>%s</b>');
+                $this->info('Primary domain name is: <b>%s</b>', $domains->primary);
             } else {
                 $this->info('There are no primary domain name so far.');
             }
