@@ -43,7 +43,9 @@ abstract class BaseService
 
         $executed = new Execution($query, $process->getOutput(), $process->getErrorOutput(), $process->getExitCode());
 
-        $this->container['io']->writeLine($executed);
+        if ($this->container['verbose']) {
+            $this->container['io']->writeLine($executed);
+        }
 
         return $executed;
     }
