@@ -46,6 +46,11 @@ class DomainHandler extends BaseHandler
         $this->getRepository()->createDomain($domain, $email);
     }
 
+    public function handleEdit(Args $args, IO $io)
+    {
+        $this->info($this->prompt("Hello world?", ['yes', 'no']));
+    }
+
     /**
      * @return DomainRepository
      */

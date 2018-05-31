@@ -23,6 +23,9 @@ class Configuration extends DefaultApplicationConfig
             $this->addStyle(Style::tag($color)->fg($color));
         }
 
+        // Used for prompt()s.
+        $this->addStyle(Style::tag('hl')->bold());
+
         return $this;
     }
 }

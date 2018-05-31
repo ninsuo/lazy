@@ -51,20 +51,37 @@ class DomainRepository extends BaseService
             throw new StopExecutionException();
         }
 
+        $backupId = $this->createBackup(sprintf('Creating domain %s', $email));
+
         $content = $this->render(__DIR__.'/db.domain.tld.twig', [
             'domain' => $name,
-            'email' => trim(str_replace('@', '.', $email), '.') . '.',
+            'email' => trim(str_replace('@', '.', $email), '.'),
             'timestamp' => time(),
+            'server_ip' => $this->getParameter('server_ip'),
         ]);
 
         $file = sprintf('/etc/bind/db.%s', $name);
         file_put_contents($file, $content);
 
         $this->exec(sprintf('%s %s', $this->getParameter('editor'), $file), [], true);
-        $this->exec('service bind9 restart');
 
-        $this->success("✅   Successfully enrolled %s", $name);
+        $this->info('This is your configuration for domain %s', $name);
+        $this->raw(file_get_contents($file));
+        if ($this->prompt('Save?', ['yes', 'no']) === 'yes') {
+            $this->exec('service bind9 restart');
+            $this->success("✅ Successfully enrolled %s", $name);
+        } else {
+            $this->removeBackup($backupId);
+        }
     }
 
+    public function createBackup($title)
+    {
 
+    }
+
+    public function removeBackup($id)
+    {
+
+    }
 }

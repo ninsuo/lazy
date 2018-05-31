@@ -46,7 +46,7 @@ if (!is_array($container['config'])) {
     die('Parsed configuration should be an array of key / value pairs.'.PHP_EOL);
 }
 
-// --- Loading all command configurations and launching the console
+// --- Loading all command configurations
 
 $configuration = new \Lazy\Core\Configuration();
 
@@ -56,8 +56,11 @@ foreach ($container->keys() as $key) {
     }
 }
 
+// --- Create a few contextual globals
+
 $configuration->addEventListener(\Webmozart\Console\Api\Event\ConsoleEvents::PRE_HANDLE,
     function (\Webmozart\Console\Api\Event\PreHandleEvent $e) use ($container) {
+        $container['args'] = $e->getArgs();
         $container['io'] = $e->getIO();
 });
 

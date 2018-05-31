@@ -6,7 +6,11 @@ use Lazy\Core\Model\Execution;
 use Lazy\Core\Traits\ConfigTrait;
 use Lazy\Core\Traits\LoggerTrait;
 use Pimple\Container;
+use Symfony\Component\Console\Helper\QuestionHelper;
+use Symfony\Component\Console\Question\ChoiceQuestion;
 use Symfony\Component\Process\Process;
+use Webmozart\Console\Adapter\ArgsInput;
+use Webmozart\Console\Adapter\IOOutput;
 
 abstract class BaseService
 {
@@ -51,5 +55,15 @@ abstract class BaseService
         );
 
         return $twig->render(basename($template), $parameters);
+    }
+
+    public function prompt($question, array $answers)
+    {
+        $question = new ChoiceQuestion($question, $answers);
+        $helper = new QuestionHelper();
+        $argsInput = new ArgsInput($this->container['args']->getRawArgs(), $this->container['args']);
+        $ioOutput = new IOOutput($this->container['io']);
+
+        return $helper->ask($argsInput, $ioOutput, $question);
     }
 }
