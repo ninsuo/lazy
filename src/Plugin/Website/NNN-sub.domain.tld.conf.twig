@@ -1,0 +1,33 @@
+
+<Directory {{ dir }}/exposed>
+    Options FollowSymLinks
+    AllowOverride All
+    Require all granted
+</Directory>
+
+<VirtualHost *:80>
+    ServerName {{ fqdn }}
+
+    #   Note that no SSL certificate will be generated for wilcards
+    #	ServerAlias www.{{ fqdn }}
+    #	ServerAlias *.{{ fqdn }}
+
+    ServerAdmin {{ email }}
+    DocumentRoot {{ dir }}/exposed
+    ErrorLog {{ dir }}/logs/error.log
+    CustomLog {{ dir }}/logs/access.log combined
+
+    #	Uncomment this to redirect all HTTP traffic to HTTPS
+    #
+    #	RewriteEngine on
+    #	RewriteCond %{SERVER_NAME} ={{ website }}
+    #	RewriteRule ^ https://%{SERVER_NAME}%{REQUEST_URI} [END,NE,R=permanent]
+
+    #   Uncomment this if you wish to redirect all traffic from *.{{ fqdn }} to {{ fqdn }}
+    #   Don't forget to create the *.{{ fqdn }} ServerAlias
+    #
+    #	RewriteEngine on
+    #	RewriteCond %{HTTP_HOST} !^{{ fqdn }}$ [NC]
+    #	RewriteRule ^(.*)$ https://{{ fqdn }}/$1 [R=301,NC,L]
+
+</VirtualHost>

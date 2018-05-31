@@ -25,45 +25,56 @@ class WebsiteRepository extends BaseService
         return array_unique($websites);
     }
 
-    public function create($domain, $email)
+    public function create($fqdn, $email)
     {
-        $backupId = $this->createBackup(sprintf('Creating domain %s', $domain));
+        $this->createBackup(sprintf('Creating website %s', $fqdn));
 
-        $content = $this->render(__DIR__.'/db.domain.tld.twig', [
-            'domain' => $domain,
+        // Create directory structure
+
+        $dir = sprintf('%s/%s', $this->getParameter('web_dir'), $fqdn);
+        $exposed = sprintf('%s/exposed', $dir);
+
+        $this->exec('mkdir -p :dir', ['dir' => sprintf('%s/app', $dir)]);
+        $this->exec('mkdir -p :dir', ['dir' => $exposed]);
+        file_put_contents(sprintf('%s/index.html', $exposed), sprintf('Hello, %s!', $fqdn));
+        $this->exec('mkdir -p :dir', ['dir' => sprintf('%s/logs', $dir)]);
+
+        // Standard (http:80) configuration
+
+        $content = $this->render(__DIR__.'/NNN-sub.domain.tld.conf.twig', [
+            'fqdn' => $fqdn,
             'email' => $email,
-            'timestamp' => time(),
-            'server_ip' => $this->getParameter('server_ip'),
+            'dir' => $dir,
         ]);
 
-        $file = sprintf('/etc/bind/db.%s', $domain);
+        $file = sprintf('/etc/apache2/sites-available/000-%s.conf', $fqdn);
         file_put_contents($file, $content);
-
-        edit:
-
         $this->exec(sprintf('%s %s', $this->getParameter('editor'), $file), [], true);
-        $this->info('This is your configuration for domain %s', $domain);
-        $this->raw(file_get_contents($file));
 
-        switch ($this->prompt('Is this configuration ok?', ['yes', 'edit', 'abort'])) {
-            case 'yes':
-                $this->exec('service bind9 restart');
-                $this->success('Successfully enrolled %s.', $domain);
+        // SSL (https:443) configuration
 
-                $domains = $this->getDomains();
-                if (!$domains->primary) {
-                    $this->setPrimary($domain, $email);
-                }
+        $content = $this->render(__DIR__.'/NNN-sub.domain.tld-ssl.conf.twig', [
+            'fqdn' => $fqdn,
+            'email' => $email,
+            'dir' => $dir,
+        ]);
 
-                break;
-            case 'edit':
-                goto edit;
-            case 'abort':
-                unlink($file);
-                $this->removeBackup($backupId);
-                $this->info('Domain creation has been cancelled.');
-                break;
+        $file = sprintf('/etc/apache2/sites-available/000-%s-ssl.conf', $fqdn);
+        file_put_contents($file, $content);
+        $this->exec(sprintf('%s %s', $this->getParameter('editor'), $file), [], true);
+
+        // Create SSL certificate and restart service
+
+        $this->exec('service apache2 restart');
+
+        if (!is_file(sprintf('/etc/letsencrypt/renewal/%s.conf', $fqdn))) {
+            $this->exec('certbot --non-interactive --agree-tos --email :email --apache --domains :fqdn', [
+                'email' => $this->getParameter('email'),
+                'fqdn' => $fqdn,
+            ]);
         }
+
+        $this->success('Website now available at https://%s.', $fqdn);
     }
 
     public function edit($domain)
@@ -117,6 +128,15 @@ class WebsiteRepository extends BaseService
         }
     }
 
+
+    private function removeCertificate($fqdn)
+    {
+        if (is_file(sprintf('/etc/letsencrypt/renewal/%s.conf', $fqdn))) {
+            $this->exec('certbot delete --non-interactive --apache --agree-tos --cert-name :fqdn', [
+                'fqdn' => $fqdn,
+            ]);
+        }
+    }
 
     public function listBackups()
     {

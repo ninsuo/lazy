@@ -54,9 +54,8 @@ class DomainRepository extends BaseService
         $file = sprintf('/etc/bind/db.%s', $domain);
         file_put_contents($file, $content);
 
-        edit:
+        prompt:
 
-        $this->exec(sprintf('%s %s', $this->getParameter('editor'), $file), [], true);
         $this->info('This is your configuration for domain %s', $domain);
         $this->raw(file_get_contents($file));
 
@@ -72,7 +71,9 @@ class DomainRepository extends BaseService
 
                 break;
             case 'edit':
-                goto edit;
+                $this->exec(sprintf('%s %s', $this->getParameter('editor'), $file), [], true);
+
+                goto prompt;
             case 'abort':
                 unlink($file);
                 $this->removeBackup($backupId);
