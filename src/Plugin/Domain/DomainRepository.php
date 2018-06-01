@@ -214,6 +214,8 @@ class DomainRepository extends BaseService
         ]));
 
         $this->success('Successfully backed up domains in %s', $id);
+
+        return $id;
     }
 
     public function restoreBackup($id)

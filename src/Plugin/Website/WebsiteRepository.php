@@ -203,6 +203,8 @@ class WebsiteRepository extends BaseService
         ]));
 
         $this->success('Successfully backed up websites in %s', $id);
+
+        return $id;
     }
 
     public function restoreBackup($id)

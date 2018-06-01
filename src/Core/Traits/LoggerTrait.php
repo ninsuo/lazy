@@ -2,8 +2,6 @@
 
 namespace Lazy\Core\Traits;
 
-use Webmozart\Console\Api\IO\IO;
-
 trait LoggerTrait
 {
     /**
@@ -11,9 +9,7 @@ trait LoggerTrait
      */
     public function raw($message)
     {
-        $this->container['io']->write(
-            call_user_func_array('sprintf', func_get_args())
-        );
+        $this->container['io']->write($message);
     }
 
     /**
