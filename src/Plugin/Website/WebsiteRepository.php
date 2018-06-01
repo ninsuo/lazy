@@ -126,9 +126,9 @@ class WebsiteRepository extends BaseService
 
         $files = [
             '/etc/apache2/sites-available/000-%s-init.conf',
-            '/etc/apache2/sites-available/000-%s-init.conf',
+            '/etc/apache2/sites-available/000-%s.conf',
             '/etc/apache2/sites-enabled/000-%s-init.conf',
-            '/etc/apache2/sites-enabled/000-%s-init.conf',
+            '/etc/apache2/sites-enabled/000-%s.conf',
         ];
 
         foreach ($files as $file) {
