@@ -202,7 +202,7 @@ class WebsiteRepository extends BaseService
             'notes' => $title,
         ]));
 
-        $this->success('Successfully backed up websites in %s', $id);
+        $this->success('Successfully backed up websites in %s (%s)', $id, $title);
 
         return $id;
     }
@@ -211,7 +211,7 @@ class WebsiteRepository extends BaseService
     {
         $this->exec('service apache2 stop');
 
-        $this->createBackup('Restoring backup #%s', $id);
+        $this->createBackup('Restoring backup %s', $id);
 
         $sourceDir = sprintf('%s/%s', $this->getBackupDirectory(), $id);
         $targetDir = '/etc/apache2';
@@ -227,7 +227,7 @@ class WebsiteRepository extends BaseService
 
         $this->exec('service apache2 start');
 
-        $this->success('Successfully restored backup #%s', $id);
+        $this->success('Successfully restored backup %s', $id);
     }
 
     protected function removeBackup($id)

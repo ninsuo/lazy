@@ -213,14 +213,14 @@ class DomainRepository extends BaseService
             'notes' => $title,
         ]));
 
-        $this->success('Successfully backed up domains in %s', $id);
+        $this->success('Successfully backed up domains in %s (%s)', $id, $title);
 
         return $id;
     }
 
     public function restoreBackup($id)
     {
-        $this->createBackup('Restoring backup #%s', $id);
+        $this->createBackup('Restoring backup %s', $id);
 
         $sourceDir = sprintf('%s/%s', $this->getBackupDirectory(), $id);
         $targetDir = '/etc/bind';
@@ -236,7 +236,7 @@ class DomainRepository extends BaseService
 
         $this->exec('service bind9 restart');
 
-        $this->success('Successfully restored backup #%s', $id);
+        $this->success('Successfully restored backup %s', $id);
     }
 
     protected function removeBackup($id)
