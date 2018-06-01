@@ -184,6 +184,8 @@ class WebsiteRepository extends BaseService
         $id = Uuid::uuid4();
         $backupDir = sprintf('%s/%s', $this->getBackupDirectory(), $id);
 
+        $this->exec('mkdir -p :dir', ['dir' => $backupDir]);
+
         $this->exec('cp -r /etc/apache2 :dir', [
             'dir' => sprintf('%s/apache2', $backupDir),
         ]);
