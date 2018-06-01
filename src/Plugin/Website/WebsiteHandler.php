@@ -87,13 +87,13 @@ class WebsiteHandler extends BaseHandler
         $id = $args->getArgument('id');
 
         $config = sprintf(
-            '%s/%s.txt',
+            '%s/%s.json',
             $this->getRepository()->getBackupDirectory(),
             str_replace('/', '', $id)
         );
 
         if (!is_file($config)) {
-            $this->error('Websites backup ID #%s does not exist.', $id);
+            throw new StopExecutionException('Websites backup ID %s does not exist.', $id);
         }
 
         $this->getRepository()->restoreBackup($id);

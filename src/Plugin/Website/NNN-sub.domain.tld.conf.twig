@@ -19,7 +19,7 @@
 
     # Comment this to avoid redirecting all HTTP traffic to HTTPS
     RewriteEngine on
-    RewriteCond %{SERVER_NAME} = {{ fqdn }}
+    RewriteCond %{SERVER_NAME} ={{ fqdn }}
     RewriteRule ^ https://%{SERVER_NAME}%{REQUEST_URI} [END,NE,R=permanent]
 
     # Uncomment this if you wish to redirect all traffic from *.{{ fqdn }} to {{ fqdn }}
