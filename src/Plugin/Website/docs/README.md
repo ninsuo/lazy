@@ -96,6 +96,15 @@ sudo apt-get update
 sudo apt-get install python-certbot-apache 
 ```
 
+If `python-certbot-apache` can't be installed, try with:
+
+```
+wget https://dl.eff.org/certbot-auto 
+chmod a+x ./certbot-auto
+mv ./certbot-auto /usr/bin/certbot
+certbot --help
+```
+
 Now, install your first certificate:
 
 ```
