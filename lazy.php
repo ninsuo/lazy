@@ -29,7 +29,7 @@ function rglob($pattern, $flags = 0)
     return $files;
 }
 
-foreach (rglob('src/*ServiceProvider.php') as $command) {
+foreach (rglob(__DIR__.'/src/*ServiceProvider.php') as $command) {
     $class = str_replace(['/', 'src', '.php'], ['\\', 'Lazy', ''], $command);
     $container->register(new $class());
 }
@@ -60,10 +60,10 @@ foreach ($container->keys() as $key) {
 
 $configuration->addEventListener(\Webmozart\Console\Api\Event\ConsoleEvents::PRE_HANDLE,
     function (\Webmozart\Console\Api\Event\PreHandleEvent $e) use ($container) {
-        $container['args'] = $e->getArgs();
-        $container['io'] = $e->getIO();
+        $container['args']    = $e->getArgs();
+        $container['io']      = $e->getIO();
         $container['verbose'] = $e->getArgs()->getOption('verbose');
-});
+    });
 
 $console = new \Webmozart\Console\ConsoleApplication($configuration);
 
