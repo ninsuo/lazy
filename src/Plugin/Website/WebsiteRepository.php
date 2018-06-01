@@ -185,7 +185,11 @@ class WebsiteRepository extends BaseService
         $backupDir = sprintf('%s/%s', $this->getBackupDirectory(), $id);
 
         $this->exec('cp -r /etc/apache2 :dir', [
-            'dir' => $backupDir,
+            'dir' => sprintf('%s/apache2', $backupDir),
+        ]);
+
+        $this->exec('cp -r /etc/letsencrypt :dir', [
+            'dir' => sprintf('%s/letsencrypt', $backupDir),
         ]);
 
         $backupTrace = sprintf('%s/%s.json', $this->getBackupDirectory(), $id);
@@ -207,15 +211,15 @@ class WebsiteRepository extends BaseService
         $this->createBackup(sprintf('Restoring backup %s', $id));
 
         $sourceDir = sprintf('%s/%s', $this->getBackupDirectory(), $id);
-        $targetDir = '/etc/apache2';
 
-        $this->exec('rm -rf :target', [
-            'target' => $targetDir,
+        $this->exec('rm -rf /etc/apache2');
+        $this->exec('cp -r :source /etc/apache2', [
+            'source' => sprintf('%s/apache2', $sourceDir),
         ]);
 
-        $this->exec('cp -r :source :target', [
-            'source' => $sourceDir,
-            'target' => $targetDir,
+        $this->exec('rm -rf /etc/letsencrypt');
+        $this->exec('cp -r :source /etc/letsencrypt', [
+            'source' => sprintf('%s/letsencrypt', $sourceDir),
         ]);
 
         $this->exec('service apache2 start');
