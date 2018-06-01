@@ -55,13 +55,11 @@ class WebsiteHandler extends BaseHandler
         $website = $this->sanitizeWebsite($args->getArgument('fqdn'));
 
         $websites = $this->getRepository()->getWebsites();
-        if (!in_array($website, $websites->domains)) {
+        if (!in_array($website, $websites)) {
             throw new StopExecutionException('Website %s does not exist!', $website);
         }
 
-        $email = $this->sanitizeEmail();
-
-        $this->getRepository()->remove($website, $email);
+        $this->getRepository()->remove($website);
     }
 
     public function handleListBackups(Args $args, IO $io)

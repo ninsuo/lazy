@@ -213,7 +213,7 @@ class DomainRepository extends BaseService
             'notes' => $title,
         ]));
 
-        $this->success('Successfully backed up domains in %s (%s)', $id, $title);
+        $this->success('Successfully backed up in %s (%s)', $id, $title);
 
         return $id;
     }

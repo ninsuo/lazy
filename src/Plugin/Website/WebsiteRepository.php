@@ -120,37 +120,30 @@ class WebsiteRepository extends BaseService
         }
     }
 
-    public function remove($domain, $email)
+    public function remove($fqdn)
     {
-        $this->createBackup(sprintf('Removing domain %s', $domain));
+        $this->createBackup(sprintf('Removing website %s', $fqdn));
 
-        $file = sprintf('/etc/bind/db.%s', $domain);
-        $this->exec('rm :file', [
-            'file' => $file
-        ]);
+        $files = [
+            '/etc/apache2/sites-available/000-%s-init.conf',
+            '/etc/apache2/sites-available/000-%s-init.conf',
+            '/etc/apache2/sites-enabled/000-%s-init.conf',
+            '/etc/apache2/sites-enabled/000-%s-init.conf',
+        ];
 
-        $this->exec('service bind9 restart');
-
-        $this->success('Successfully removed domain name %s.', $domain);
-
-        $domains = $this->getDomains();
-        if ($domains->primary === $domain) {
-            if (count($domains) == 0) {
-                $this->removePrimary();
-            } else {
-                $this->setPrimary(reset($domains->domains), $email);
-            }
+        foreach ($files as $file) {
+            $this->exec('rm -f :file', ['file' => $file]);
         }
-    }
 
-
-    private function removeCertificate($fqdn)
-    {
         if (is_file(sprintf('/etc/letsencrypt/renewal/%s.conf', $fqdn))) {
             $this->exec('certbot delete --non-interactive --apache --agree-tos --cert-name :fqdn', [
                 'fqdn' => $fqdn,
             ]);
         }
+
+        $this->exec('service apache2 restart');
+
+        $this->success('Successfully removed website %s.', $fqdn);
     }
 
     public function listBackups()
@@ -202,7 +195,7 @@ class WebsiteRepository extends BaseService
             'notes' => $title,
         ]));
 
-        $this->success('Successfully backed up websites in %s (%s)', $id, $title);
+        $this->success('Successfully backed up in %s (%s)', $id, $title);
 
         return $id;
     }
