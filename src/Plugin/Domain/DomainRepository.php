@@ -42,7 +42,7 @@ class DomainRepository extends BaseService
 
     public function create($domain, $email)
     {
-        $backupId = $this->createBackup(sprintf('Creating domain %s', $domain));
+        $this->createBackup(sprintf('Creating domain %s', $domain));
 
         $content = $this->render(__DIR__.'/db.domain.tld.twig', [
             'domain' => $domain,
@@ -54,31 +54,12 @@ class DomainRepository extends BaseService
         $file = sprintf('/etc/bind/db.%s', $domain);
         file_put_contents($file, $content);
 
-        prompt:
+        $this->exec('service bind9 restart');
+        $this->success('Successfully enrolled %s.', $domain);
 
-        $this->info('This is your configuration for domain %s', $domain);
-        $this->raw(file_get_contents($file));
-
-        switch ($this->prompt('Is this configuration ok?', ['yes', 'edit', 'abort'])) {
-            case 'yes':
-                $this->exec('service bind9 restart');
-                $this->success('Successfully enrolled %s.', $domain);
-
-                $domains = $this->getDomains();
-                if (!$domains->primary) {
-                    $this->setPrimary($domain, $email);
-                }
-
-                break;
-            case 'edit':
-                $this->exec(sprintf('%s %s', $this->getParameter('editor'), $file), [], true);
-
-                goto prompt;
-            case 'abort':
-                unlink($file);
-                $this->removeBackup($backupId);
-                $this->info('Domain creation has been cancelled.');
-                break;
+        $domains = $this->getDomains();
+        if (!$domains->primary) {
+            $this->setPrimary($domain, $email);
         }
     }
 
@@ -97,8 +78,7 @@ class DomainRepository extends BaseService
         switch ($this->prompt('Is this configuration ok?', ['yes', 'edit', 'abort'])) {
             case 'yes':
                 $this->exec('service bind9 restart');
-                $this->success('Successfully edited domain name %s',
-                    $domain);
+                $this->success('Successfully edited domain name %s', $domain);
                 break;
             case 'edit':
                 goto edit;

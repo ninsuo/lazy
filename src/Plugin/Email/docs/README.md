@@ -240,6 +240,54 @@ chmod -R o-rwx /etc/postfix
 service postfix restart
 ```
 
+## Configure Dovecot
+
+First, backup all the things!
+
+```
+cp /etc/dovecot/dovecot.conf /etc/dovecot/dovecot.conf.orig
+cp /etc/dovecot/conf.d/10-mail.conf /etc/dovecot/conf.d/10-mail.conf.orig
+cp /etc/dovecot/conf.d/10-auth.conf /etc/dovecot/conf.d/10-auth.conf.orig
+cp /etc/dovecot/dovecot-sql.conf.ext /etc/dovecot/dovecot-sql.conf.ext.orig
+cp /etc/dovecot/conf.d/10-master.conf /etc/dovecot/conf.d/10-master.conf.orig
+cp /etc/dovecot/conf.d/10-ssl.conf /etc/dovecot/conf.d/10-ssl.conf.orig
+```
+
+Then, in `/etc/dovecot/dovecot.conf`, put:
+
+```
+protocols = imap pop3 lmtp
+```
+
+just below `!include_try /usr/share/dovecot/protocols.d/*.protocol`.
+
+Now open `/etc/dovecot/conf.d/10-mail.conf` and change the following keys:
+
+```
+mail_location = maildir:/var/mail/vhosts/%d/%n
+mail_privileged_group = mail
+```
+
+If you check `ls -ld /var/mail`, you should see ownership like:
+
+```
+drwxrwsr-x 2 root mail 4096 Feb 12 09:55 /var/mail
+```
+
+Add the vmail group:
+
+```
+groupadd -g 5000 vmail
+useradd -g vmail -u 5000 vmail -d /var/mail
+```
+
+Now create the vhost and change permissions:
+
+```
+mkdir -p /var/mail/vhosts/beast.systems
+chown -R vmail:vmail /var/mail
+```
+
 
 https://www.linode.com/docs/email/postfix/email-with-postfix-dovecot-and-mysql/
 
