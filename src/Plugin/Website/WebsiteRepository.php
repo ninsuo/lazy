@@ -132,7 +132,7 @@ class WebsiteRepository extends BaseService
         ];
 
         foreach ($files as $file) {
-            $this->exec('rm -f :file', ['file' => $file]);
+            $this->exec('rm -f :file', ['file' => sprintf($file, $fqdn)]);
         }
 
         if (is_file(sprintf('/etc/letsencrypt/renewal/%s.conf', $fqdn))) {
