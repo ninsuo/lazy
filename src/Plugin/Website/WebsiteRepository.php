@@ -90,7 +90,7 @@ class WebsiteRepository extends BaseService
 
         $this->exec('service apache2 restart');
 
-        $this->success('Website now available at https://%s.', $fqdn);
+        $this->success('Website %s available at https://%s.', sprintf('%s/exposed', $dir), $fqdn);
     }
 
     public function edit($fqdn)
