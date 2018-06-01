@@ -204,7 +204,7 @@ class WebsiteRepository extends BaseService
     {
         $this->exec('service apache2 stop');
 
-        $this->createBackup('Restoring backup %s', $id);
+        $this->createBackup(sprintf('Restoring backup %s', $id));
 
         $sourceDir = sprintf('%s/%s', $this->getBackupDirectory(), $id);
         $targetDir = '/etc/apache2';

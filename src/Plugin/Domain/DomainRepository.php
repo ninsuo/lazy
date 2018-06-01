@@ -220,7 +220,7 @@ class DomainRepository extends BaseService
 
     public function restoreBackup($id)
     {
-        $this->createBackup('Restoring backup %s', $id);
+        $this->createBackup(sprintf('Restoring backup %s', $id));
 
         $sourceDir = sprintf('%s/%s', $this->getBackupDirectory(), $id);
         $targetDir = '/etc/bind';
