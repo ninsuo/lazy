@@ -1,108 +1,5 @@
 # Emails
 
-Be root!
-
-```
-su
-cd /root/
-```
-
-We'll need to install a few other programs in order to manage emails correctly.
-
-```
-apt-get purge sendmail*
-apt-get install exim4 exim4-config exim4-daemon-heavy
-dpkg-reconfigure exim4-config
-```
-
-When running exim4-config, you will be prompted for information:
-
-- first page, select "Internet site".
-- second page, leave the system's default
-- third page, add your public ip address
-- fourth page, add all the domain names you'll need to support
-- fifth page, add the same domains as in page four
-- sixth page, leave blank
-- seventh page (dns thing), select "No"
-- heighten page, select "mbox format"
-- ninth page (split into smaller files), select "Yes"
-
-Now, we need to install dbmail, but because we are running Linux, we'll need
-to compile it by ourselves (oh yeah, I love linux that damn lumberjack OS).
-
-First, install the libraries required for compilling:
-
-```
-sudo apt-get install debian-keyring pkg-config libglib2.0-dev libgmime-2.6-dev libmhash-dev libevent-dev libssl-dev libzdb-dev mysql-server mysql-client
-```
-
-At the following address, http://www.dbmail.org/index.php?page=download copy the link
-location of the latest dbmail available. Back to Debian, download it:
-
-```
-wget http://www.dbmail.org/download/3.1/dbmail-3.1.17.tar.gz
-tar xzvf dbmail-3.1.17.tar.gz
-cd dbmail-3.1.17
-./configure
-make
-make install
-cd ..
-```
-
-Now, let's install the dbmail schema:
-
-```
-mysql
-```
-
-```mysql
-CREATE DATABASE dbmail;
-GRANT ALL ON dbmail.* TO dbmail@localhost IDENTIFIED BY '<some password>';
-```
-
-We need to fix the schema manually because it contains a typo:
-
-```
-emacs -nw dbmail-3.1.17/sql/mysql/create_tables.mysql
-```
-
-Search for `dbmail_auto_replies` table and change the index name like this:
-
-```mysql
-FOREIGN KEY user_idnrr_fk (user_idnr)
-```
-
-Now install the schema:
-
-```
-cat dbmail-3.1.17/sql/mysql/create_tables.mysql|mysql dbmail
-rm -rf dbmail-3.1.17*
-```
-
-A bit of configuration....
-
-```
-emacs -nw /etc/dbmail/dbmail.conf
-```
-
-```
-dburi = mysql://dbmail:<some password>@localhost:3306/dbmail
-authdriver = sql
-```
-
-```
-emacs -nw /etc/default/dbmail
-```
-
-```
-START_IMAPD=true
-START_LMTPD=true
-```
-
-
-
-
-
 All Debian distributions come with exim, which is easier to configure than postfix.
 
 But after a few comparisons, I decided to install postfix anyway, because it has a postfix-mysql package that will let me manage mailboxes on the mysql server.
@@ -112,7 +9,7 @@ It seems to be well integrated with Dovecot, an IMAP server, which will complete
 ## Packages
 
 ```
-sudo apt-get install postfix postfix-mysql dovecot-core dovecot-imapd dovecot-pop3d dovecot-lmtpd dovecot-mysql mysql-server
+sudo apt-get install postfix postfix-mysql dovecot-core dovecot-imapd dovecot-pop3d dovecot-lmtpd dovecot-mysql mysql-server mysql-client
 ```
 
 ## Configure the DNS
@@ -138,7 +35,7 @@ CREATE DATABASE mailserver;
 
 GRANT ALL PRIVILEGES ON mailserver.* TO 'mailserver'@'127.0.0.1' IDENTIFIED BY 'somepassword';
 
-GRANT SELECT ON mailserver.* TO 'mailuser'@'127.0.0.1' IDENTIFIED BY '0TFQfLOLFvGTtq3NEBT8bYHnRlH48Sfm';
+GRANT SELECT ON mailserver.* TO 'mailuser'@'127.0.0.1' IDENTIFIED BY 'somepassword';
 
 FLUSH PRIVILEGES;
 
@@ -229,7 +126,7 @@ alias_database = hash:/etc/aliases
 myorigin = /etc/mailname
 mydestination =  $myhostname, beast.systems, sd-50799.dedibox.fr, localhost.dedibox.fr, localhost
 relayhost =
-mynetworks = 127.0.0.0/8 [::ffff:127.0.0.0]/104 [::1]/128
+mynetworks = 127.0.0.0/8 [::ffff:127.0.0.0]/104 [::1]/128 62.210.207.60
 mailbox_size_limit = 0
 recipient_delimiter = +
 inet_interfaces = all
@@ -390,6 +287,101 @@ Now create the vhost and change permissions:
 mkdir -p /var/mail/vhosts/beast.systems
 chown -R vmail:vmail /var/mail
 ```
+
+Open `/etc/dovecot/conf.d/10-auth.conf` and change the following keys:
+
+```
+auth_mechanisms = plain login
+```
+
+Comment-out the following key:
+
+```
+#!include auth-system.conf.ext
+```
+
+Uncomment the following key:
+
+```
+!include auth-sql.conf.ext
+```
+
+Now open `/etc/dovecot/conf.d/auth-sql.conf.ext` and ensure that file contain the following:
+
+```
+passdb {
+  driver = sql
+  args = /etc/dovecot/dovecot-sql.conf.ext
+}
+userdb {
+  driver = static
+  args = uid=vmail gid=vmail home=/var/mail/vhosts/%d/%n
+}
+```
+
+Now open `/etc/dovecot/dovecot-sql.conf.ext` to set mysql information:
+
+```
+driver = mysql
+connect = host=127.0.0.1 dbname=mailserver user=mailuser password=somepassord
+default_pass_scheme = SHA512-CRYPT
+password_query = SELECT email as user, password FROM virtual_users WHERE email='%u';
+```
+
+A few permissions to change...
+
+```
+chown -R vmail:dovecot /etc/dovecot
+chmod -R o-rwx /etc/dovecot
+```
+
+Now open `/etc/dovecot/conf.d/10-master.conf`
+
+Find the `service lmtp` section and put the following:
+
+```
+service lmtp {
+    unix_listener /var/spool/postfix/private/dovecot-lmtp {
+      mode = 0600
+      user = postfix
+      group = postfix
+    }
+```
+
+Find the `service auth` section and put the following:
+
+```
+service auth {
+  unix_listener /var/spool/postfix/private/auth {
+    mode = 0666
+    user = postfix
+    group = postfix
+  }
+
+  unix_listener auth-userdb {
+    mode = 0600
+    user = vmail
+  }
+
+  user = dovecot
+}
+```
+
+Find the `service auth-worker` section and set the following:
+
+```
+service auth-worker {
+  user = vmail
+}
+```
+
+Restart dovecot...
+
+```
+service dovecot restart
+```
+
+
 
 
 https://www.linode.com/docs/email/postfix/email-with-postfix-dovecot-and-mysql/
