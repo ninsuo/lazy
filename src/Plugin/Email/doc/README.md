@@ -1,388 +1,78 @@
 # Emails
 
-All Debian distributions come with exim, which is easier to configure than postfix.
+a tester?
+https://www.rosehosting.com/blog/setup-and-configure-a-mail-server-with-postfixadmin/
 
-But after a few comparisons, I decided to install postfix anyway, because it has a postfix-mysql package that will let me manage mailboxes on the mysql server.
 
-It seems to be well integrated with Dovecot, an IMAP server, which will complete my installation.
 
-## Packages
 
-```
-sudo apt-get install postfix postfix-mysql dovecot-core dovecot-imapd dovecot-pop3d dovecot-lmtpd dovecot-mysql mysql-server mysql-client
-```
 
-## Configure the DNS
 
-Add the following in your DNS configuration:
 
-```
-	IN      MX      10 beast.systems.
-```
+As Debian is an OS for lumberjacks, it's a fucking damn pain to install a secure 
+email environment manually. So we are going to install and tweak iRedMail solution,
 
-## MySQL preparation
+## Install iRedMail
 
-Run `mysql` as root.
+Go to https://www.iredmail.org/download.html and copy download link location.
+
+Now, in your server, be root:
 
 ```
-sudo mysql -u root
+su
+cd /root/
+wget https://bitbucket.org/zhb/iredmail/downloads/iRedMail-0.9.8.tar.bz2
+tar xjvf iRedMail-0.9.8.tar.bz2 
+cd iRedMail-0.9.8
+bash iRedMail.sh
 ```
 
-Then create the schema.
+Do the following when prompted:
 
-```mysql
-CREATE DATABASE mailserver;
+- press OK at the welcome message
+- leave /var/vmail
+- leave nginx checked
+- tick MariaDB
+- choose a mysql password
+- enter your first domain name (eg: beast.systems)
+- choose a password for postmaster@beast.systems
+- tick roundcube, iRedAdmin and fail2ban, untick the others
+- proceed to installation
 
-GRANT ALL PRIVILEGES ON mailserver.* TO 'mailserver'@'127.0.0.1' IDENTIFIED BY 'somepassword';
+Installation takes a while. Once finished, `reboot`.
 
-GRANT SELECT ON mailserver.* TO 'mailuser'@'127.0.0.1' IDENTIFIED BY 'somepassword';
+## Add a few records in your DNS:
 
-FLUSH PRIVILEGES;
-
-USE mailserver;
-
-CREATE TABLE `virtual_domains` (
-  `id` int(11) NOT NULL auto_increment,
-  `name` varchar(50) NOT NULL,
-  PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-
-CREATE TABLE `virtual_users` (
-  `id` int(11) NOT NULL auto_increment,
-  `domain_id` int(11) NOT NULL,
-  `password` varchar(106) NOT NULL,
-  `email` varchar(100) NOT NULL,
-  PRIMARY KEY (`id`),
-  UNIQUE KEY `email` (`email`),
-  FOREIGN KEY (domain_id) REFERENCES virtual_domains(id) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-
-CREATE TABLE `virtual_aliases` (
-  `id` int(11) NOT NULL auto_increment,
-  `domain_id` int(11) NOT NULL,
-  `source` varchar(100) NOT NULL,
-  `destination` varchar(100) NOT NULL,
-  PRIMARY KEY (`id`),
-  FOREIGN KEY (domain_id) REFERENCES virtual_domains(id) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-```
-
-We can now insert our first domain, email and alias.
-
-```mysql
-INSERT INTO `mailserver`.`virtual_domains`
-  (`id`, `name`)
-VALUES
-  (1, 'beast.systems');
-
-INSERT INTO `mailserver`.`virtual_users`
-  (`id`, `domain_id`, `email`, `password`)
-VALUES
-  (1, 1, 'alain@beast.systems', ENCRYPT('password', CONCAT('$6$', SUBSTRING(SHA(RAND()), -16))));
-
-INSERT INTO `mailserver`.`virtual_aliases`
-  (`id`, `domain_id`, `source`, `destination`)
-VALUES
-  (1, 1, 'alias@beast.systems', 'alain@beast.systems');
-```
-
-## Configure Postfix
-
-Let's do a backup first:
+Install `dnsutils`, that will be useful later on.
 
 ```
-cp /etc/postfix/main.cf /etc/postfix/main.cf.orig
+apt-get install dnsutils
 ```
 
-Now, put this in `/etc/postfix/main.cf`:
+Add the following DNS in your bind zone configuration:
 
 ```
-smtpd_banner = $myhostname ESMTP $mail_name (Ubuntu)
-biff = no
-append_dot_mydomain = no
-readme_directory = no
-
-# TLS (self-signed)
-smtpd_tls_cert_file=/etc/dovecot/dovecot.pem
-smtpd_tls_key_file=/etc/dovecot/private/dovecot.pem
-smtpd_use_tls=yes
-smtpd_tls_auth_only = yes
-smtp_tls_security_level = may
-smtpd_tls_security_level = may
-
-# Enabling SMTP for authenticated users, and handing off authentication to Dovecot
-smtpd_sasl_type = dovecot
-smtpd_sasl_path = private/auth
-smtpd_sasl_auth_enable = yes
-
-smtpd_recipient_restrictions =
-        permit_sasl_authenticated,
-        permit_mynetworks,
-        reject_unauth_destination
-
-myhostname = beast.systems
-alias_maps = hash:/etc/aliases
-alias_database = hash:/etc/aliases
-myorigin = /etc/mailname
-mydestination =  $myhostname, beast.systems, sd-50799.dedibox.fr, localhost.dedibox.fr, localhost
-relayhost =
-mynetworks = 127.0.0.0/8 [::ffff:127.0.0.0]/104 [::1]/128 62.210.207.60
-mailbox_size_limit = 0
-recipient_delimiter = +
-inet_interfaces = all
-
-# Handing off local delivery to Dovecot's LMTP, and telling it where to store mail
-virtual_transport = lmtp:unix:private/dovecot-lmtp
-
-# Virtual domains, users, and aliases
-virtual_mailbox_domains = mysql:/etc/postfix/mysql-virtual-mailbox-domains.cf
-virtual_mailbox_maps = mysql:/etc/postfix/mysql-virtual-mailbox-maps.cf
-virtual_alias_maps = mysql:/etc/postfix/mysql-virtual-alias-maps.cf,
-        mysql:/etc/postfix/mysql-virtual-email2email.cf
+        10      MX      beast.systems
 ```
 
-In `/etc/postfix/mysql-virtual-mailbox-domains.cf`, add:
+TODO dkim record
 
-```mysql
-user = mailuser
-password = mailuserpass
-hosts = 127.0.0.1
-dbname = mailserver
-query = SELECT 1 FROM virtual_domains WHERE name='%s'
-```
+## Get rid of Nginx
 
-In `/etc/postfix/mysql-virtual-mailbox-maps.cf`, add:
+Because Nginx takes the ports 80 & 443, it will conflict with our apache.
 
-```mysql
-user = mailuser
-password = mailuserpass
-hosts = 127.0.0.1
-dbname = mailserver
-query = SELECT 1 FROM virtual_users WHERE email='%s'
-```
+We will need:
 
-In `/etc/postfix/mysql-virtual-alias-maps.cf`, add:
+- to change both ports on nginx
+- to create websites that redirect to the nginx at the right port
 
-```mysql
-user = mailuser
-password = mailuserpass
-hosts = 127.0.0.1
-dbname = mailserver
-query = SELECT destination FROM virtual_aliases WHERE source='%s'
-```
+1) edit `/etc/nginx/sites-available/00-default-ssl.conf`
 
-In `/etc/postfix/mysql-virtual-email2email.cf`, add:
+Replace 443 by 4430
 
-```mysql
-user = mailuser
-password = mailuserpass
-hosts = 127.0.0.1
-dbname = mailserver
-query = SELECT email FROM virtual_users WHERE email='%s'
-```
+2) edit `/etc/nginx/sites-available/00-default.conf`
 
-Restart postfix:
+Replace 80 by 800
 
-```
-sudo service postfix restart
-```
-
-Test that the domain, email and alias inserted on mysql can be found:
-
-```
-postmap -q beast.systems mysql:/etc/postfix/mysql-virtual-mailbox-domains.cf
-postmap -q alain@beast.systems mysql:/etc/postfix/mysql-virtual-mailbox-maps.cf
-postmap -q alias@beast.systems mysql:/etc/postfix/mysql-virtual-alias-maps.cf
-```
-
-Backup the master configuration:
-
-```
-cp /etc/postfix/master.cf /etc/postfix/master.cf.orig
-```
-
-Then ensure that there's the following content inside `/etc/postfix/master.cf`:
-
-```
-#
-# Postfix master process configuration file.  For details on the format
-# of the file, see the master(5) manual page (command: "man 5 master").
-#
-# Do not forget to execute "postfix reload" after editing this file.
-#
-# ==========================================================================
-# service type  private unpriv  chroot  wakeup  maxproc command + args
-#               (yes)   (yes)   (yes)   (never) (100)
-# ==========================================================================
-smtp      inet  n       -       -       -       -       smtpd
-#smtp      inet  n       -       -       -       1       postscreen
-#smtpd     pass  -       -       -       -       -       smtpd
-#dnsblog   unix  -       -       -       -       0       dnsblog
-#tlsproxy  unix  -       -       -       -       0       tlsproxy
-submission inet n       -       -       -       -       smtpd
-  -o syslog_name=postfix/submission
-  -o smtpd_tls_security_level=encrypt
-  -o smtpd_sasl_auth_enable=yes
-  -o smtpd_client_restrictions=permit_sasl_authenticated,reject
-  -o milter_macro_daemon_name=ORIGINATING
-smtps     inet  n       -       -       -       -       smtpd
-  -o syslog_name=postfix/smtps
-  -o smtpd_tls_wrappermode=yes
-  -o smtpd_sasl_auth_enable=yes
-  -o smtpd_client_restrictions=permit_sasl_authenticated,reject
-  -o milter_macro_daemon_name=ORIGINATING
-```
-
-Change permissions & restart
-
-```
-chmod -R o-rwx /etc/postfix
-service postfix restart
-```
-
-## Configure Dovecot
-
-First, backup all the things!
-
-```
-cp /etc/dovecot/dovecot.conf /etc/dovecot/dovecot.conf.orig
-cp /etc/dovecot/conf.d/10-mail.conf /etc/dovecot/conf.d/10-mail.conf.orig
-cp /etc/dovecot/conf.d/10-auth.conf /etc/dovecot/conf.d/10-auth.conf.orig
-cp /etc/dovecot/dovecot-sql.conf.ext /etc/dovecot/dovecot-sql.conf.ext.orig
-cp /etc/dovecot/conf.d/10-master.conf /etc/dovecot/conf.d/10-master.conf.orig
-cp /etc/dovecot/conf.d/10-ssl.conf /etc/dovecot/conf.d/10-ssl.conf.orig
-```
-
-Then, in `/etc/dovecot/dovecot.conf`, put:
-
-```
-protocols = imap pop3 lmtp
-```
-
-just below `!include_try /usr/share/dovecot/protocols.d/*.protocol`.
-
-Now open `/etc/dovecot/conf.d/10-mail.conf` and change the following keys:
-
-```
-mail_location = maildir:/var/mail/vhosts/%d/%n
-mail_privileged_group = mail
-```
-
-If you check `ls -ld /var/mail`, you should see ownership like:
-
-```
-drwxrwsr-x 2 root mail 4096 Feb 12 09:55 /var/mail
-```
-
-Add the vmail group:
-
-```
-groupadd -g 5000 vmail
-useradd -g vmail -u 5000 vmail -d /var/mail
-```
-
-Now create the vhost and change permissions:
-
-```
-mkdir -p /var/mail/vhosts/beast.systems
-chown -R vmail:vmail /var/mail
-```
-
-Open `/etc/dovecot/conf.d/10-auth.conf` and change the following keys:
-
-```
-auth_mechanisms = plain login
-```
-
-Comment-out the following key:
-
-```
-#!include auth-system.conf.ext
-```
-
-Uncomment the following key:
-
-```
-!include auth-sql.conf.ext
-```
-
-Now open `/etc/dovecot/conf.d/auth-sql.conf.ext` and ensure that file contain the following:
-
-```
-passdb {
-  driver = sql
-  args = /etc/dovecot/dovecot-sql.conf.ext
-}
-userdb {
-  driver = static
-  args = uid=vmail gid=vmail home=/var/mail/vhosts/%d/%n
-}
-```
-
-Now open `/etc/dovecot/dovecot-sql.conf.ext` to set mysql information:
-
-```
-driver = mysql
-connect = host=127.0.0.1 dbname=mailserver user=mailuser password=somepassord
-default_pass_scheme = SHA512-CRYPT
-password_query = SELECT email as user, password FROM virtual_users WHERE email='%u';
-```
-
-A few permissions to change...
-
-```
-chown -R vmail:dovecot /etc/dovecot
-chmod -R o-rwx /etc/dovecot
-```
-
-Now open `/etc/dovecot/conf.d/10-master.conf`
-
-Find the `service lmtp` section and put the following:
-
-```
-service lmtp {
-    unix_listener /var/spool/postfix/private/dovecot-lmtp {
-      mode = 0600
-      user = postfix
-      group = postfix
-    }
-```
-
-Find the `service auth` section and put the following:
-
-```
-service auth {
-  unix_listener /var/spool/postfix/private/auth {
-    mode = 0666
-    user = postfix
-    group = postfix
-  }
-
-  unix_listener auth-userdb {
-    mode = 0600
-    user = vmail
-  }
-
-  user = dovecot
-}
-```
-
-Find the `service auth-worker` section and set the following:
-
-```
-service auth-worker {
-  user = vmail
-}
-```
-
-Restart dovecot...
-
-```
-service dovecot restart
-```
-
-
-
-
-https://www.linode.com/docs/email/postfix/email-with-postfix-dovecot-and-mysql/
+3) restart nginx: `service nginx restart`
 

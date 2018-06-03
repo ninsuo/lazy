@@ -20,7 +20,7 @@ I have this partitioning on the HD (in fact, I've 2 disks in RAID 1, but we don'
 
 ![Paritioning](partitioning.png)
 
-The most important thing is the `/data` directory, it will be our base for everything.
+Note: as of today, I removed `/data` partition and given the whole space to `/`.
 
 ## Ok, I have access to SSH!
 
@@ -40,7 +40,7 @@ apt-get install sudo
 Now let's install emacs because vi sucks (yes it does).
 
 ```sh
-sudo apt-get install emacs
+apt-get install emacs
 ```
 
 In `~/.myemacs`:
@@ -84,13 +84,13 @@ sudo cp /home/ninsuo/.emacs /home/ninsuo/.myemacs /root/
 Let's add a `monster` user, it will be used by automated robots.
 
 ```sh
-sudo adduser monster
+adduser monster
 ```
 
 Then, we want him to do `sudo` commands without being asked for a password. For automated actions, that's better.
 
 ```sh
-sudo visudo
+visudo
 ```
 
 Add the following line at the bottom of the file (yes, at the bottom, because `%admin` settings may overwrite yours):
@@ -119,11 +119,13 @@ ssh-keygen -t rsa -b 4096 -C "auto@beast.systems"
 
 ### SSH 
 
+Come back as `root` by typing `exit`.
+
 Speaking about SSH, you can change ssh default port if you wish:
 
 ```sh
-sudo emacs -nw /etc/ssh/sshd_config
-sudo service ssh restart
+emacs -nw /etc/ssh/sshd_config
+service ssh restart
 ```
 
 Make sure root authentication is disabled/limited to rsa key-based.
@@ -134,17 +136,17 @@ If you wish to use domain names (that's better on a dedicated server), you shoul
 
 Read the doc [here](../src/Plugin/Domain/doc/README.md)
 
-### mysql, redis, apache, php
-
-If you wish to manage websites, you should follow the apache & cie installation.
-
-Read the doc [here](../src/Plugin/Website/doc/README.md)
-
 ### emails
 
 If you wish to manage email accounts associated with your domain names, continue here.
 
 Read the doc [here](../src/Plugin/Email/doc/README.md)
+
+### mysql, redis, apache, php
+
+If you wish to manage websites, you should follow the apache & cie installation.
+
+Read the doc [here](../src/Plugin/Website/doc/README.md)
 
 ### git and github
 
