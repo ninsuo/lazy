@@ -1,8 +1,7 @@
-
 <Directory {{ dir }}/exposed>
-    Options FollowSymLinks
-    AllowOverride All
-    Require all granted
+Options FollowSymLinks
+AllowOverride All
+Require all granted
 </Directory>
 
 <VirtualHost *:80>
@@ -45,7 +44,7 @@
 
     SSLCertificateFile /etc/letsencrypt/live/{{ fqdn }}/fullchain.pem
     SSLCertificateKeyFile /etc/letsencrypt/live/{{ fqdn }}/privkey.pem
-    Include /etc/letsencrypt/options-ssl-apache.conf
+    #Include /etc/letsencrypt/options-ssl-apache.conf
 
     # Uncomment this if you wish to redirect all traffic from *.{{ fqdn }} to {{ fqdn }}
     # Don't forget to create the *.{{ fqdn }} ServerAlias

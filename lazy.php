@@ -30,7 +30,7 @@ function rglob($pattern, $flags = 0)
 }
 
 foreach (rglob(__DIR__.'/src/*ServiceProvider.php') as $command) {
-    $class = str_replace(['/', 'src', '.php'], ['\\', 'Lazy', ''], $command);
+    $class = str_replace([__DIR__, '/', 'src', '.php'], ['', '\\', 'Lazy', ''], $command);
     $container->register(new $class());
 }
 
