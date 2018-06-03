@@ -1,5 +1,108 @@
 # Emails
 
+Be root!
+
+```
+su
+cd /root/
+```
+
+We'll need to install a few other programs in order to manage emails correctly.
+
+```
+apt-get purge sendmail*
+apt-get install exim4 exim4-config exim4-daemon-heavy
+dpkg-reconfigure exim4-config
+```
+
+When running exim4-config, you will be prompted for information:
+
+- first page, select "Internet site".
+- second page, leave the system's default
+- third page, add your public ip address
+- fourth page, add all the domain names you'll need to support
+- fifth page, add the same domains as in page four
+- sixth page, leave blank
+- seventh page (dns thing), select "No"
+- heighten page, select "mbox format"
+- ninth page (split into smaller files), select "Yes"
+
+Now, we need to install dbmail, but because we are running Linux, we'll need
+to compile it by ourselves (oh yeah, I love linux that damn lumberjack OS).
+
+First, install the libraries required for compilling:
+
+```
+sudo apt-get install debian-keyring pkg-config libglib2.0-dev libgmime-2.6-dev libmhash-dev libevent-dev libssl-dev libzdb-dev mysql-server mysql-client
+```
+
+At the following address, http://www.dbmail.org/index.php?page=download copy the link
+location of the latest dbmail available. Back to Debian, download it:
+
+```
+wget http://www.dbmail.org/download/3.1/dbmail-3.1.17.tar.gz
+tar xzvf dbmail-3.1.17.tar.gz
+cd dbmail-3.1.17
+./configure
+make
+make install
+cd ..
+```
+
+Now, let's install the dbmail schema:
+
+```
+mysql
+```
+
+```mysql
+CREATE DATABASE dbmail;
+GRANT ALL ON dbmail.* TO dbmail@localhost IDENTIFIED BY '<some password>';
+```
+
+We need to fix the schema manually because it contains a typo:
+
+```
+emacs -nw dbmail-3.1.17/sql/mysql/create_tables.mysql
+```
+
+Search for `dbmail_auto_replies` table and change the index name like this:
+
+```mysql
+FOREIGN KEY user_idnrr_fk (user_idnr)
+```
+
+Now install the schema:
+
+```
+cat dbmail-3.1.17/sql/mysql/create_tables.mysql|mysql dbmail
+rm -rf dbmail-3.1.17*
+```
+
+A bit of configuration....
+
+```
+emacs -nw /etc/dbmail/dbmail.conf
+```
+
+```
+dburi = mysql://dbmail:<some password>@localhost:3306/dbmail
+authdriver = sql
+```
+
+```
+emacs -nw /etc/default/dbmail
+```
+
+```
+START_IMAPD=true
+START_LMTPD=true
+```
+
+
+
+
+
 All Debian distributions come with exim, which is easier to configure than postfix.
 
 But after a few comparisons, I decided to install postfix anyway, because it has a postfix-mysql package that will let me manage mailboxes on the mysql server.
