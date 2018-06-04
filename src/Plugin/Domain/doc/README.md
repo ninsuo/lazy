@@ -7,7 +7,7 @@ We are going to manage domain names ourselves using bind9 daemon.
 Ok, let's take it seriously. We have a server, an IP and an unbound domain name `beast.systems`. We need to set up our primary DNS server.
 
 ```sh
-sudo apt-get install bind9 bind9utils
+apt-get install bind9 bind9utils
 ```
 
 Let's set our dns server to IPv4 in `/etc/default/bind9`, change `OPTIONS` to be the following:

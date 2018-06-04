@@ -136,12 +136,6 @@ If you wish to use domain names (that's better on a dedicated server), you shoul
 
 Read the doc [here](../src/Plugin/Domain/doc/README.md)
 
-### emails
-
-If you wish to manage email accounts associated with your domain names, continue here.
-
-Read the doc [here](../src/Plugin/Email/doc/README.md)
-
 ### mysql, redis, apache, php
 
 If you wish to manage websites, you should follow the apache & cie installation.
@@ -159,3 +153,14 @@ sudo apt-get install git
 Next, install your public key to GitHub: go to your [SSH keys settings](https://github.com/settings/keys) and clic "New SSH key". Put a title (like `beast.systems`) and copy/paste your `~/.ssh/id_rsa.pub`.
 
 This will have the same effect as putting this public key to your GitHub's account `authorized_keys`.
+
+### lazy
+
+Now you can install lazy as it will help you to install emails, check the [readme](../README.md).
+
+### emails
+
+If you wish to manage email accounts associated with your domain names, continue here.
+
+Read the doc [here](../src/Plugin/Email/doc/README.md)
+

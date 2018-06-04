@@ -1,78 +1,98 @@
 # Emails
 
-a tester?
+We are going to use PostfixAdmin schema to install emails, because there are more
+documentation than for an installation from scratch. And by the way, the first
+ocarina was running email through PostfixAdmin and it worked well, thus it should
+be good to go.
+
+## Postfix Admin
+
+Install the following packages first:
+
+```
+apt-get install wget nano dbconfig-common sqlite3 php7.1-mbstring php7.1-imap
+service apache2 restart
+```
+
+Create a virtual user `vmail` which will own all emails
+
+
+```
+useradd -r -u 150 -g mail -d /var/vmail -s /sbin/nologin -c "Virtual Mail User" vmail
+mkdir -p /var/vmail
+chmod -R 770 /var/vmail
+chown -R vmail:mail /var/vmail
+```
+
+Create the PostfixAdmin database:
+
+```
+mysql
+CREATE DATABASE postfixadmin;
+GRANT ALL PRIVILEGES ON postfixadmin.* TO 'postfixadmin'@'127.0.0.1' identified by 'somepassword';
+```
+
+Create the PostfixAdmin website:
+
+Note: I'm storing it in the website we created in the Website documentation 
+earlier, but you can create another website if you wish here.
+
+```
+lazy website add sd-50799.dedibox.fr
+```
+
+Go to https://sourceforge.net/projects/postfixadmin/files/ and download the
+latest version of the project.
+
+```
+cd /var/www/sd-50799.dedibox.fr
+scp alain@home.fuz.org:~/Downloads/postfixadmin-* ./
+tar xzvf postfixadmin-3.2.tar.gz
+rm postfixadmin-3.2.tar.gz
+cp postfixadmin-3.2/config.inc.php postfixadmin-3.2/config.local.php
+emacs -nw postfixadmin-3.2/config.local.php
+```
+
+Update the following parameters:
+
+```
+$CONF['configured'] = true;
+$CONF['database_type'] = 'mysqli';
+$CONF['database_host'] = '127.0.0.1';
+$CONF['database_user'] = 'postfixadmin';
+$CONF['database_password'] = 'somepassword';
+$CONF['database_name'] = 'postfixadmin';
+$CONF['domain_path'] = 'NO';
+$CONF['domain_in_mailbox'] = 'YES';
+```
+
+Expose the website:
+
+```
+mkdir postfixadmin-3.2/templates_c
+chown -R www-data:www-data postfixadmin-3.2
+rm -r exposed
+ln -s /var/www/sd-50799.dedibox.fr/postfixadmin-3.2/public exposed
+```
+
+Now, go to https://sd-50799.dedibox.fr/setup.php and check if everything went fine.
+
+Once done, 
+
+1) set a setup password and add its hash in your config.local.php (at the key setup_password)
+
+2) enter your setup password in the form, and choose an admin email address & password
+
+3) you can finally login at https://sd-50799.dedibox.fr/login.php
+
+## Postfix
+
+
+## Dovecot
+
+
+
+
 https://www.rosehosting.com/blog/setup-and-configure-a-mail-server-with-postfixadmin/
 
-
-
-
-
-
-
-As Debian is an OS for lumberjacks, it's a fucking damn pain to install a secure 
-email environment manually. So we are going to install and tweak iRedMail solution,
-
-## Install iRedMail
-
-Go to https://www.iredmail.org/download.html and copy download link location.
-
-Now, in your server, be root:
-
-```
-su
-cd /root/
-wget https://bitbucket.org/zhb/iredmail/downloads/iRedMail-0.9.8.tar.bz2
-tar xjvf iRedMail-0.9.8.tar.bz2 
-cd iRedMail-0.9.8
-bash iRedMail.sh
-```
-
-Do the following when prompted:
-
-- press OK at the welcome message
-- leave /var/vmail
-- leave nginx checked
-- tick MariaDB
-- choose a mysql password
-- enter your first domain name (eg: beast.systems)
-- choose a password for postmaster@beast.systems
-- tick roundcube, iRedAdmin and fail2ban, untick the others
-- proceed to installation
-
-Installation takes a while. Once finished, `reboot`.
-
-## Add a few records in your DNS:
-
-Install `dnsutils`, that will be useful later on.
-
-```
-apt-get install dnsutils
-```
-
-Add the following DNS in your bind zone configuration:
-
-```
-        10      MX      beast.systems
-```
-
-TODO dkim record
-
-## Get rid of Nginx
-
-Because Nginx takes the ports 80 & 443, it will conflict with our apache.
-
-We will need:
-
-- to change both ports on nginx
-- to create websites that redirect to the nginx at the right port
-
-1) edit `/etc/nginx/sites-available/00-default-ssl.conf`
-
-Replace 443 by 4430
-
-2) edit `/etc/nginx/sites-available/00-default.conf`
-
-Replace 80 by 800
-
-3) restart nginx: `service nginx restart`
 

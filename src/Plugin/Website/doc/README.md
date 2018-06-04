@@ -17,7 +17,7 @@ apt-get update
 Now install the whole thing in a row:
 
 ```sh
-sudo apt-get install \
+apt-get install \
 mysql-server redis-server sqlite \
 php7.1 php7.1-cli php7.1-common \
 php7.1-curl php7.1-gd php7.1-mysql php7.1-sqlite3 php-redis \
@@ -28,8 +28,8 @@ php7.1-xml apache2 libapache2-mod-php7.1
 Install php dependancy manager:
 
 ```sh
-sudo php -r "readfile('https://getcomposer.org/installer');" | php
-sudo mv composer.phar /bin/composer
+php -r "readfile('https://getcomposer.org/installer');" | php
+mv composer.phar /bin/composer
 ```
 
 Visit `http://62.210.207.60` to check if everything is fine.
@@ -41,7 +41,7 @@ We could stop here, but let's tweak a bit the apache configuration. Open `/etc/a
 ```apache
 <Directory /usr/share>
         AllowOverride None
-	Require all granted
+    	Require all granted
 </Directory>
 
 <Directory /var/www/>
@@ -83,11 +83,11 @@ We rename this file for better consistency and restart apache:
 
 ```sh
 cd /etc/apache2/sites-available
-sudo mv 000-default.conf 000-sd-50799.dedibox.fr.conf
+mv 000-default.conf 000-sd-50799.dedibox.fr.conf
 cd ../sites-enabled
-sudo rm 000-default.conf
-sudo ln -s ../sites-available/000-sd-50799.dedibox.fr.conf ./
-sudo service apache2 restart
+rm 000-default.conf
+ln -s ../sites-available/000-sd-50799.dedibox.fr.conf ./
+service apache2 restart
 ```
 
 Test it! Have a look to [http://sd-50799.dedibox.fr](http://sd-50799.dedibox.fr)
@@ -97,10 +97,10 @@ Test it! Have a look to [http://sd-50799.dedibox.fr](http://sd-50799.dedibox.fr)
 First, enable mod-ssl, mod-rewrite and mod-suexec on apache:
 
 ```sh
-sudo a2enmod ssl
-sudo a2enmod suexec
-sudo a2enmod rewrite
-sudo service apache2 restart
+a2enmod ssl
+a2enmod suexec
+a2enmod rewrite
+service apache2 restart
 ```
 
 Then, install certbot:
@@ -108,7 +108,7 @@ Then, install certbot:
 Add the following line to `/etc/apt/sources.list`
 
 ```
-deb http://ftp.debian.org/debian stretch-backports main
+echo 'deb http://ftp.debian.org/debian stretch-backports main' >> /etc/apt/sources.list 
 ```
 
 Note that Debian 9 is "stretch" and Debian 7 is "jessie", don't mess it!
@@ -116,15 +116,15 @@ Note that Debian 9 is "stretch" and Debian 7 is "jessie", don't mess it!
 Run the following commands one by one because of questions asked:
 
 ```
-sudo apt-get update
-sudo apt-get install software-properties-common dirmngr
-sudo apt-get -t stretch-backports install certbot python-certbot-apache
+apt-get update
+apt-get install software-properties-common dirmngr
+apt-get -t stretch-backports install certbot python-certbot-apache
 ```
 
 Now, install your first certificate:
 
 ```
-sudo certbot certonly --agree-tos --email alain@fuz.org --webroot --webroot-path=/var/www/sd-50799.dedibox.fr/exposed/ --domains sd-50799.dedibox.fr
+certbot certonly --agree-tos --email alain@fuz.org --webroot --webroot-path=/var/www/sd-50799.dedibox.fr/exposed/ --domains sd-50799.dedibox.fr
 ```
 
 Put the following configuration in `/etc/apache2/sites-available/000-sd-50799.dedibox.fr.conf`:
@@ -176,7 +176,7 @@ Put the following configuration in `/etc/apache2/sites-available/000-sd-50799.de
 
     SSLCertificateFile /etc/letsencrypt/live/sd-50799.dedibox.fr/fullchain.pem
     SSLCertificateKeyFile /etc/letsencrypt/live/sd-50799.dedibox.fr/privkey.pem
-    Include /etc/letsencrypt/options-ssl-apache.conf
+    #Include /etc/letsencrypt/options-ssl-apache.conf
 
     # Uncomment this if you wish to redirect all traffic from *.sd-50799.dedibox.fr to sd-50799.dedibox.fr
     # Don't forget to create the *.sd-50799.dedibox.fr ServerAlias
@@ -191,9 +191,9 @@ Put the following configuration in `/etc/apache2/sites-available/000-sd-50799.de
 Create missing directories and restart apache:
 
 ```
-sudo mkdir /var/www/sd-50799.dedibox.fr/logs
-sudo chown -R www-data:www-data /var/www
-sudo service apache2 restart
+mkdir /var/www/sd-50799.dedibox.fr/logs
+chown -R www-data:www-data /var/www
+service apache2 restart
 ```
 
 Visit `https://sd-50799.dedibox.fr` to check if everything is working.
@@ -201,7 +201,7 @@ Visit `https://sd-50799.dedibox.fr` to check if everything is working.
 Add your first crontab for auto-renewing certificates:
 
 ```
-sudo crontab -e
+crontab -e
 ```
 
 ```cron
@@ -211,5 +211,3 @@ sudo crontab -e
 
 You are ready to go, if you want more information about what does lazy, you
 can read the documentation [here](website.md).
-
-
