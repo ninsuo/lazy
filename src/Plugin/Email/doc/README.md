@@ -361,25 +361,13 @@ In your DNS zones file, in `/etc/bind/db.beast.systems`, check that
 the following lines appear:
 
 ```
-;
-; BIND data file for beast.systems
-;
-$TTL	86400
-@		IN		SOA		ns.beast.systems.	alain.fuz.org. (
-						1528233476		; Serial
-						1080			; Refresh
-						3600			; Retry
-						604800			; Expire
-						10800 )			; Negative Cache TTL
-
-beast.systems.		IN	NS		ns.beast.systems.
-ns.beast.systems.	IN	A		62.210.207.60
 mail.beast.systems.	IN	A		62.210.207.60
-beast.systems.		IN	A		62.210.207.60
-*.beast.systems.	IN	A		62.210.207.60
 beast.systems.		IN MX	10 mail.beast.systems.
 beast.systems.		IN TXT	"v=spf1 +a +mx -all +a:infra.fuz.org"
 ```
+
+Note that `62.210.207.60` is my server ip and `infra.fuz.org` is my reverse 
+dns lookup on that ip.
 
 ## Roundcube
 

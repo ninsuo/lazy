@@ -41,6 +41,12 @@ options {
 };
 ```
 
+Change a few permissions:
+
+```
+chmod 644 /etc/bind/rndc.key
+```
+
 Restart bind9:
 
 ```sh

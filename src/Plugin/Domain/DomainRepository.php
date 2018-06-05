@@ -17,7 +17,7 @@ class DomainRepository extends BaseService
         clearstatcache();
 
         $domains->domains = array_filter(
-            array_map(function($elem) {
+            array_map(function ($elem) {
                 $domain = substr(basename($elem), 3);
                 if (preg_match('/^[0-9\.]+$/', $domain) || in_array($domain, ['empty', 'local', 'root'])) {
                     return false;
@@ -27,7 +27,7 @@ class DomainRepository extends BaseService
             }, glob('/etc/bind/db.*'))
         );
 
-        $file = '/etc/bind/db.' . $this->getArpa();
+        $file = '/etc/bind/db.'.$this->getArpa();
 
         if (is_file($file)) {
             $primary = $this->exec("cat :file | grep IN | grep SOA | cut -d '\t' -f 4 | cut -d ' ' -f 1", [
@@ -45,15 +45,17 @@ class DomainRepository extends BaseService
         $this->createBackup(sprintf('Creating domain %s', $domain));
 
         $content = $this->render(__DIR__.'/db.domain.tld.twig', [
-            'domain' => $domain,
-            'email' => $email,
-            'timestamp' => time(),
-            'server_ip' => $this->getParameter('server_ip'),
+            'domain'         => $domain,
+            'email'          => $email,
+            'timestamp'      => time(),
+            'server_ip'      => $this->getParameter('server_ip'),
             'server_reverse' => $this->getParameter('server_reverse'),
         ]);
 
         $file = sprintf('/etc/bind/db.%s', $domain);
         file_put_contents($file, $content);
+
+        $this->regenerateLocalConfiguration();
 
         $this->exec('service bind9 restart');
         $this->success('Successfully enrolled %s.', $domain);
@@ -97,8 +99,10 @@ class DomainRepository extends BaseService
 
         $file = sprintf('/etc/bind/db.%s', $domain);
         $this->exec('rm :file', [
-            'file' => $file
+            'file' => $file,
         ]);
+
+        $this->regenerateLocalConfiguration();
 
         $this->exec('service bind9 restart');
 
@@ -119,12 +123,12 @@ class DomainRepository extends BaseService
         $this->createBackup(sprintf('Setting domain %s as primary', $domain));
 
         $content = $this->render(__DIR__.'/db.xxx.xxx.xxx.twig', [
-            'domains' => $this->getDomains()->domains,
-            'domain' => $domain,
-            'email' => $email,
+            'domains'   => $this->getDomains()->domains,
+            'domain'    => $domain,
+            'email'     => $email,
             'timestamp' => time(),
-            'arpa' => $this->getArpa(),
-            'revArpa' => $this->getReverseArpa(),
+            'arpa'      => $this->getArpa(),
+            'revArpa'   => $this->getReverseArpa(),
         ]);
 
         $file = sprintf('/etc/bind/db.%s', $this->getArpa());
@@ -136,13 +140,14 @@ class DomainRepository extends BaseService
 
     public function listBackups()
     {
-        $backups = array_map(function($v) {
-            $json = json_decode(file_get_contents($v), true);
+        $backups = array_map(function ($v) {
+            $json       = json_decode(file_get_contents($v), true);
             $json['id'] = basename(substr($v, 0, -5));
+
             return $json;
         }, glob(sprintf('%s/*.json', $this->getBackupDirectory())));
 
-        usort($backups, function($a, $b) {
+        usort($backups, function ($a, $b) {
             return strtotime($a['date']) < strtotime($b['date']);
         });
 
@@ -153,7 +158,7 @@ class DomainRepository extends BaseService
     {
         $this->cleanBackups();
 
-        $id = Uuid::uuid4();
+        $id        = Uuid::uuid4();
         $backupDir = sprintf('%s/%s', $this->getBackupDirectory(), $id);
 
         $this->exec('cp -r /etc/bind :dir', [
@@ -163,7 +168,7 @@ class DomainRepository extends BaseService
         $backupTrace = sprintf('%s/%s.json', $this->getBackupDirectory(), $id);
 
         file_put_contents($backupTrace, json_encode([
-            'date' => date('Y-m-d H:i:s'),
+            'date'  => date('Y-m-d H:i:s'),
             'notes' => $title,
         ]));
 
@@ -198,7 +203,7 @@ class DomainRepository extends BaseService
      */
     public function getBackupDirectory()
     {
-        $dir = $this->getParameter('backup_dir') . '/domain';
+        $dir = $this->getParameter('backup_dir').'/domain';
 
         if (!is_dir($dir)) {
             $this->exec('mkdir -p :dir', [
@@ -207,6 +212,19 @@ class DomainRepository extends BaseService
         }
 
         return $dir;
+    }
+
+    protected function regenerateLocalConfiguration()
+    {
+        $content = $this->render(__DIR__.'/named.conf.local.twig', [
+            'domains'       => $this->getDomains()->domains,
+            'arpa'          => $this->getArpa(),
+            'server_ip'     => $this->getParameter('server_ip'),
+            'secondary_dns' => $this->getParameter('secondary_dns'),
+        ]);
+
+        $file = sprintf('/etc/bind/named.conf.local', $domain);
+        file_put_contents($file, $content);
     }
 
     protected function removePrimary()
@@ -234,15 +252,15 @@ class DomainRepository extends BaseService
                 $this->removeBackup($backups[$i]);
             }
         }
-   }
+    }
 
     protected function removeBackup($id)
     {
-        $backupDir = sprintf('%s/%s', $this->getBackupDirectory(), $id);
+        $backupDir  = sprintf('%s/%s', $this->getBackupDirectory(), $id);
         $backupFile = sprintf('%s.json', $backupDir);
 
         $this->exec('rm -rf :dir :file', [
-            'dir' => $backupDir,
+            'dir'  => $backupDir,
             'file' => $backupFile,
         ]);
     }
@@ -253,6 +271,7 @@ class DomainRepository extends BaseService
     private function getArpa()
     {
         $ip = explode('.', $this->getParameter('server_ip'));
+
         return $ip[2].'.'.$ip[1].'.'.$ip[0];
     }
 
@@ -262,6 +281,7 @@ class DomainRepository extends BaseService
     private function getReverseArpa()
     {
         $ip = explode('.', $this->getParameter('server_ip'));
+
         return $ip[3];
     }
 }
