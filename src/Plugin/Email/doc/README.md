@@ -87,8 +87,142 @@ Once done,
 
 ## Postfix
 
+First, let's install Postfix.
+
+```
+apt-get install postfix
+```
+
+When prompted, 
+
+1) select "Internet Site"
+
+2) leave your server's hostname
+
+Now, create a mapping files:
+
+```
+/etc/postfix/sqlite_virtual_alias_maps.cf
+
+user = postfixadmin
+password = somepassword
+hosts = 127.0.0.1
+dbname = postfixadmin
+query = SELECT goto FROM alias WHERE address='%s' AND active = '1'
+
+```
+
+```
+/etc/postfix/sqlite_virtual_alias_domain_maps.cf
+
+user = postfixadmin
+password = somepassword
+hosts = 127.0.0.1
+dbname = postfixadmin
+query = SELECT goto FROM alias,alias_domain WHERE alias_domain.alias_domain = '%d' and alias.address = printf('%u', '@', alias_domain.target_domain) AND alias.active = 1 AND alias_domain.active='1'
+```
+
+```
+/etc/postfix/sqlite_virtual_alias_domain_catchall_maps.cf
+
+user = postfixadmin
+password = somepassword
+hosts = 127.0.0.1
+dbname = postfixadmin
+query  = SELECT goto FROM alias,alias_domain WHERE alias_domain.alias_domain = '%d' and alias.address = printf('@', alias_domain.target_domain) AND alias.active = 1 AND alias_domain.active='1'
+```
+
+```
+/etc/postfix/sqlite_virtual_domains_maps.cf
+
+user = postfixadmin
+password = somepassword
+hosts = 127.0.0.1
+dbname = postfixadmin
+query = SELECT domain FROM domain WHERE domain='%s' AND active = '1'
+```
+
+```
+/etc/postfix/sqlite_virtual_mailbox_maps.cf
+
+user = postfixadmin
+password = somepassword
+hosts = 127.0.0.1
+dbname = postfixadmin
+query = SELECT maildir FROM mailbox WHERE username='%s' AND active = '1'
+```
+
+```
+/etc/postfix/sqlite_virtual_alias_domain_mailbox_maps.cf
+
+user = postfixadmin
+password = somepassword
+hosts = 127.0.0.1
+dbname = postfixadmin
+query = SELECT maildir FROM mailbox,alias_domain WHERE alias_domain.alias_domain = '%d' and mailbox.username = printf('%u', '@', alias_domain.target_domain) AND mailbox.active = 1 AND alias_domain.active='1'
+```
+
+Now, run the following commands to configure postfix:
+
+```
+postconf -e "myhostname = $(hostname -A)"
+ 
+postconf -e "virtual_mailbox_domains = sqlite:/etc/postfix/sqlite_virtual_domains_maps.cf"
+postconf -e "virtual_alias_maps =  sqlite:/etc/postfix/sqlite_virtual_alias_maps.cf, sqlite:/etc/postfix/sqlite_virtual_alias_domain_maps.cf, sqlite:/etc/postfix/sqlite_virtual_alias_domain_catchall_maps.cf"
+postconf -e "virtual_mailbox_maps = sqlite:/etc/postfix/sqlite_virtual_mailbox_maps.cf, sqlite:/etc/postfix/sqlite_virtual_alias_domain_mailbox_maps.cf"
+ 
+postconf -e "smtpd_tls_cert_file = /etc/ssl/certs/ssl-cert-snakeoil.pem"
+postconf -e "smtpd_tls_key_file = /etc/ssl/private/ssl-cert-snakeoil.key"
+postconf -e "smtpd_use_tls = yes"
+postconf -e "smtpd_tls_auth_only = yes"
+ 
+postconf -e "smtpd_sasl_type = dovecot"
+postconf -e "smtpd_sasl_path = private/auth"
+postconf -e "smtpd_sasl_auth_enable = yes"
+postconf -e "smtpd_recipient_restrictions = permit_sasl_authenticated, permit_mynetworks, reject_unauth_destination"
+ 
+postconf -e "mydestination = localhost"
+postconf -e "mynetworks = 127.0.0.0/8"
+postconf -e "inet_protocols = ipv4"
+ 
+postconf -e "virtual_transport = lmtp:unix:private/dovecot-lmtp"
+```
+
+Open `/etc/postfix/master.cf` and check that the options for 
+`submission inet n` and `smtps inet n` sections match the following:
+
+```
+smtp      inet  n       -       y       -       -       smtpd
+#smtp      inet  n       -       y       -       1       postscreen
+#smtpd     pass  -       -       y       -       -       smtpd
+#dnsblog   unix  -       -       y       -       0       dnsblog
+#tlsproxy  unix  -       -       y       -       0       tlsproxy
+submission inet n       -       y       -       -       smtpd
+  -o syslog_name=postfix/submission
+  -o smtpd_tls_security_level=encrypt
+  -o smtpd_sasl_auth_enable=yes
+#  -o smtpd_reject_unlisted_recipient=no
+  -o smtpd_client_restrictions=permit_sasl_authenticated,reject
+#  -o smtpd_helo_restrictions=$mua_helo_restrictions
+#  -o smtpd_sender_restrictions=$mua_sender_restrictions
+#  -o smtpd_recipient_restrictions=
+#  -o smtpd_relay_restrictions=permit_sasl_authenticated,reject
+  -o milter_macro_daemon_name=ORIGINATING
+smtps     inet  n       -       y       -       -       smtpd
+  -o syslog_name=postfix/smtps
+#  -o smtpd_tls_wrappermode=yes
+  -o smtpd_sasl_auth_enable=yes
+#  -o smtpd_reject_unlisted_recipient=no
+  -o smtpd_client_restrictions=permit_sasl_authenticated,reject
+#  -o smtpd_helo_restrictions=$mua_helo_restrictions
+#  -o smtpd_sender_restrictions=$mua_sender_restrictions
+#  -o smtpd_recipient_restrictions=
+#  -o smtpd_relay_restrictions=permit_sasl_authenticated,reject
+  -o milter_macro_daemon_name=ORIGINATING
+```
 
 ## Dovecot
+
 
 
 
