@@ -12,8 +12,8 @@ $TTL	86400
 
 {{ domain }}.		IN NS		ns.{{ domain }}.
 ns.{{ domain }}.	IN A		{{ server_ip }}
-mail.{{ domain }}.	IN A		{{ server_ip }}
 {{ domain }}.		IN A		{{ server_ip }}
+mail.{{ domain }}.	IN A		{{ server_ip }}
 *.{{ domain }}.		IN A		{{ server_ip }}
 {{ domain }}.		IN MX	10 mail.{{ domain }}.
 {{ domain }}.		IN TXT	"v=spf1 +a +mx -all +a:{{ server_reverse }}"
