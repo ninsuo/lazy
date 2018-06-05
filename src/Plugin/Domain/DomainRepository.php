@@ -49,6 +49,7 @@ class DomainRepository extends BaseService
             'email' => $email,
             'timestamp' => time(),
             'server_ip' => $this->getParameter('server_ip'),
+            'server_reverse' => $this->getParameter('server_reverse'),
         ]);
 
         $file = sprintf('/etc/bind/db.%s', $domain);
@@ -133,17 +134,6 @@ class DomainRepository extends BaseService
         $this->success('Successfully set domain name %s as primary.', $domain);
     }
 
-    protected function removePrimary()
-    {
-        $file = sprintf('/etc/bind/db.%s', $this->getArpa());
-
-        $this->exec('rm :file', [
-            'file' => $file,
-        ]);
-
-        $this->success('Successfully removed the reverse dns data file.');
-    }
-
     public function listBackups()
     {
         $backups = array_map(function($v) {
@@ -158,22 +148,6 @@ class DomainRepository extends BaseService
 
         return $backups;
     }
-
-    protected function cleanBackups()
-    {
-        $exec = $this->exec('ls -t :dir | grep -v json', [
-            'dir' => $this->getBackupDirectory(),
-        ]);
-
-        $backups = explode("\n", $exec->stdout);
-
-        $count = count($backups);
-        if ($count > 9) {
-            for ($i = 9; $i < $count; $i++) {
-                $this->removeBackup($backups[$i]);
-            }
-        }
-   }
 
     public function createBackup($title)
     {
@@ -219,17 +193,6 @@ class DomainRepository extends BaseService
         $this->success('Successfully restored backup %s', $id);
     }
 
-    protected function removeBackup($id)
-    {
-        $backupDir = sprintf('%s/%s', $this->getBackupDirectory(), $id);
-        $backupFile = sprintf('%s.json', $backupDir);
-
-        $this->exec('rm -rf :dir :file', [
-            'dir' => $backupDir,
-            'file' => $backupFile,
-        ]);
-    }
-
     /**
      * @return string
      */
@@ -244,6 +207,44 @@ class DomainRepository extends BaseService
         }
 
         return $dir;
+    }
+
+    protected function removePrimary()
+    {
+        $file = sprintf('/etc/bind/db.%s', $this->getArpa());
+
+        $this->exec('rm :file', [
+            'file' => $file,
+        ]);
+
+        $this->success('Successfully removed the reverse dns data file.');
+    }
+
+    protected function cleanBackups()
+    {
+        $exec = $this->exec('ls -t :dir | grep -v json', [
+            'dir' => $this->getBackupDirectory(),
+        ]);
+
+        $backups = explode("\n", $exec->stdout);
+
+        $count = count($backups);
+        if ($count > 9) {
+            for ($i = 9; $i < $count; $i++) {
+                $this->removeBackup($backups[$i]);
+            }
+        }
+   }
+
+    protected function removeBackup($id)
+    {
+        $backupDir = sprintf('%s/%s', $this->getBackupDirectory(), $id);
+        $backupFile = sprintf('%s.json', $backupDir);
+
+        $this->exec('rm -rf :dir :file', [
+            'dir' => $backupDir,
+            'file' => $backupFile,
+        ]);
     }
 
     /**

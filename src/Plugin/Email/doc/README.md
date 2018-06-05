@@ -85,6 +85,8 @@ Once done,
 
 3) you can finally login at https://sd-50799.dedibox.fr/login.php
 
+Warning: take note of the postmaster address you just created, it will be required later.
+
 ## Postfix
 
 First, let's install Postfix.
@@ -221,12 +223,148 @@ smtps     inet  n       -       y       -       -       smtpd
   -o milter_macro_daemon_name=ORIGINATING
 ```
 
+Enable postfix
+
+```
+systemctl enable postfix
+systemctl restart postfix
+```
+
 ## Dovecot
 
+First, install dovecot (obviously)
+
+```
+sudo apt-get install dovecot-imapd dovecot-lmtpd dovecot-pop3d dovecot-mysql
+```
+
+Now, let's configure... change the values to match each of the following keys.
+
+Edit `/etc/dovecot/conf.d/10-mail.conf`:
+
+```
+mail_location = maildir:/var/vmail/%d/%n
+mail_privileged_group = mail
+mail_uid = vmail
+mail_gid = mail
+first_valid_uid = 150
+last_valid_uid = 150
+```
+
+Edit `/etc/dovecot/conf.d/10-auth.conf`:
+
+```
+auth_mechanisms = plain login
+#!include auth-system.conf.ext
+!include auth-sql.conf.ext
+```
+
+For the next one, check in your postfixadmin configuration the value of
+`$CONF['encrypt']` to ensure it will match with the default_pass_scheme.
+
+For example, I can see:
+
+```
+root@beastsys:/var/www/sd-50799.dedibox.fr/postfixadmin-3.2# cat config.local.php |grep encrypt
+$CONF['encrypt'] = 'md5crypt';
+```
+
+Edit `/etc/dovecot/dovecot-sql.conf.ext`:
+
+```
+driver = mysql
+connect = host=127.0.0.1 dbname=postfixadmin user=postfixadmin password=somepassword
+
+default_pass_scheme = MD5-CRYPT
+
+user_query = \
+   SELECT '/var/vmail/%d/%n' as home, 'maildir:/var/vmail/%d/%n' as mail, \
+   150 AS uid, 8 AS gid, printf('dirsize:storage=', quota) AS quota \
+   FROM mailbox WHERE username = '%u' AND active = '1'
+
+password_query = \
+   SELECT username as user, password, '/var/vmail/%d/%n' as userdb_home, \
+   'maildir:/var/vmail/%d/%n' as userdb_mail, 150 as userdb_uid, 8 as userdb_gid \
+   FROM mailbox WHERE username = '%u' AND active = '1'
+```
+
+Edit `/etc/dovecot/conf.d/10-ssl.conf`:
+
+```
+ssl = yes
+```
+
+Edit `/etc/dovecot/conf.d/15-lda.conf` (take care to put the same email as
+you did when configuring postfix):
+
+```
+postmaster_address = postmaster@beast.systems
+```
+
+Edit `/etc/dovecot/conf.d/10-master.conf`:
+
+Find the `lmtp` section and change it to:
+
+```
+service lmtp {
+  unix_listener /var/spool/postfix/private/dovecot-lmtp {
+    mode = 0600
+    user = postfix
+    group = postfix
+  }
+}
+```
+
+Find the `auth` section and change it to:
+
+```
+service auth {
+  unix_listener /var/spool/postfix/private/auth {
+    mode = 0666
+    user = postfix
+    group = postfix
+  }
+  unix_listener auth-userdb {
+    mode = 0600
+    user = vmail
+    #group = vmail
+  }
+  user = dovecot
+}
+```
+
+Find the `auth-worker` section and change it to:
+
+```
+service auth-worker {
+  user = vmail
+}
+```
+
+Change a few permissions:
+
+```
+chown -R vmail:dovecot /etc/dovecot
+chmod -R o-rwx /etc/dovecot
+```
+
+Enable dovcot:
+
+```
+systemctl enable dovecot
+systemctl restart dovecot
+```
+
+## DNS
+
+
+
+## Roundcube
 
 
 
 
-https://www.rosehosting.com/blog/setup-and-configure-a-mail-server-with-postfixadmin/
+## Final word
 
+Debian is an OS for lumberjacks.
 
