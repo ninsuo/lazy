@@ -254,7 +254,7 @@ class DomainRepository extends BaseService
         $content = $this->render(__DIR__.'/db.xxx.xxx.xxx.twig', [
             'domains'   => $this->getDomains()->domains,
             'primary'   => $primary,
-            'email'     => $this->getParameter('email'),
+            'email'     => $this->getParameter('admin_email'),
             'timestamp' => time(),
             'arpa'      => $this->getArpa(),
             'revArpa'   => $this->getReverseArpa(),
