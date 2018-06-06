@@ -91,9 +91,7 @@ class DomainHandler extends BaseHandler
             throw new StopExecutionException('%s is already the primary domain for this server.', $domain);
         }
 
-        $email = $this->sanitizeEmail();
-
-        $this->getRepository()->setPrimary($domain, $email);
+        $this->getRepository()->setPrimary($domain);
     }
 
     public function handleListBackups(Args $args, IO $io)

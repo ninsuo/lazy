@@ -57,13 +57,11 @@ class DomainRepository extends BaseService
 
         $this->regenerateLocalConfiguration();
 
+        $domains = $this->getDomains();
+        $this->regenerateArpa($domains, $domains->primary ? $domains->primary : $domain);
+
         $this->exec('service bind9 restart');
         $this->success('Successfully enrolled %s.', $domain);
-
-        $domains = $this->getDomains();
-        if (!$domains->primary) {
-            $this->setPrimary($domain, $email);
-        }
     }
 
     public function edit($domain)
@@ -104,37 +102,22 @@ class DomainRepository extends BaseService
 
         $this->regenerateLocalConfiguration();
 
+        $domains = $this->getDomains();
+        $this->regenerateArpa($domains, $domains->primary !== $domain ? $domains->primary : null);
+
         $this->exec('service bind9 restart');
 
         $this->success('Successfully removed domain name %s.', $domain);
-
-        $domains = $this->getDomains();
-        if ($domains->primary === $domain) {
-            if (count($domains) == 0) {
-                $this->removePrimary();
-            } else {
-                $this->setPrimary(reset($domains->domains), $email);
-            }
-        }
     }
 
     public function setPrimary($domain, $email)
     {
         $this->createBackup(sprintf('Setting domain %s as primary', $domain));
 
-        $content = $this->render(__DIR__.'/db.xxx.xxx.xxx.twig', [
-            'domains'   => $this->getDomains()->domains,
-            'domain'    => $domain,
-            'email'     => $email,
-            'timestamp' => time(),
-            'arpa'      => $this->getArpa(),
-            'revArpa'   => $this->getReverseArpa(),
-        ]);
-
-        $file = sprintf('/etc/bind/db.%s', $this->getArpa());
-        file_put_contents($file, $content);
+        $this->regenerateArpa($domain);
 
         $this->exec('service bind9 restart');
+
         $this->success('Successfully set domain name %s as primary.', $domain);
     }
 
@@ -227,17 +210,6 @@ class DomainRepository extends BaseService
         file_put_contents($file, $content);
     }
 
-    protected function removePrimary()
-    {
-        $file = sprintf('/etc/bind/db.%s', $this->getArpa());
-
-        $this->exec('rm :file', [
-            'file' => $file,
-        ]);
-
-        $this->success('Successfully removed the reverse dns data file.');
-    }
-
     protected function cleanBackups()
     {
         $exec = $this->exec('ls -t :dir | grep -v json', [
@@ -263,6 +235,33 @@ class DomainRepository extends BaseService
             'dir'  => $backupDir,
             'file' => $backupFile,
         ]);
+    }
+
+    protected function regenerateArpa(Domains $domains, $primary = null)
+    {
+        $file = sprintf('/etc/bind/db.%s', $this->getArpa());
+
+        if (count($domains->domains) == 0) {
+            file_put_contents($file, '');
+
+            return;
+        }
+
+        if (is_null($primary)) {
+            $primary = reset($domains->domains);
+        }
+
+        $content = $this->render(__DIR__.'/db.xxx.xxx.xxx.twig', [
+            'domains'   => $this->getDomains()->domains,
+            'primary'   => $primary,
+            'email'     => $this->getParameter('email'),
+            'timestamp' => time(),
+            'arpa'      => $this->getArpa(),
+            'revArpa'   => $this->getReverseArpa(),
+        ]);
+
+        $file = sprintf('/etc/bind/db.%s', $this->getArpa());
+        file_put_contents($file, $content);
     }
 
     /**
