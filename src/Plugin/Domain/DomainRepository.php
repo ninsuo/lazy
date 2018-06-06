@@ -206,7 +206,7 @@ class DomainRepository extends BaseService
             'secondary_dns' => $this->getParameter('secondary_dns'),
         ]);
 
-        $file = sprintf('/etc/bind/named.conf.local', $domain);
+        $file = sprintf('/etc/bind/named.conf.local');
         file_put_contents($file, $content);
     }
 
