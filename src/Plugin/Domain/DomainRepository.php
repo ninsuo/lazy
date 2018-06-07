@@ -40,13 +40,13 @@ class DomainRepository extends BaseService
         return $domains;
     }
 
-    public function create($domain, $email)
+    public function create($domain)
     {
         $this->createBackup(sprintf('Creating domain %s', $domain));
 
         $content = $this->render(__DIR__.'/db.domain.tld.twig', [
             'domain'         => $domain,
-            'email'          => $email,
+            'email'          => $this->getParameter('admin_email'),
             'timestamp'      => time(),
             'server_ip'      => $this->getParameter('server_ip'),
             'server_reverse' => $this->getParameter('server_reverse'),
@@ -91,7 +91,7 @@ class DomainRepository extends BaseService
         }
     }
 
-    public function remove($domain, $email)
+    public function remove($domain)
     {
         $this->createBackup(sprintf('Removing domain %s', $domain));
 
@@ -110,7 +110,7 @@ class DomainRepository extends BaseService
         $this->success('Successfully removed domain name %s.', $domain);
     }
 
-    public function setPrimary($domain, $email)
+    public function setPrimary($domain)
     {
         $this->createBackup(sprintf('Setting domain %s as primary', $domain));
 

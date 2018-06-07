@@ -4,7 +4,6 @@ namespace Lazy\Plugin\Domain;
 
 use Lazy\Core\Base\BaseHandler;
 use Lazy\Core\Exception\StopExecutionException;
-use Symfony\Component\Validator\Constraints\Email;
 use Symfony\Component\Validator\Constraints\Regex;
 use Webmozart\Console\Api\Args\Args;
 use Webmozart\Console\Api\IO\IO;
@@ -37,9 +36,7 @@ class DomainHandler extends BaseHandler
             throw new StopExecutionException('Domain %s already exists!', $domain);
         }
 
-        $email = $this->sanitizeEmail();
-
-        $this->getRepository()->create($domain, $email);
+        $this->getRepository()->create($domain);
     }
 
     public function handleEdit(Args $args, IO $io)
@@ -63,9 +60,7 @@ class DomainHandler extends BaseHandler
             throw new StopExecutionException('Domain %s does not exist!', $domain);
         }
 
-        $email = $this->sanitizeEmail();
-
-        $this->getRepository()->remove($domain, $email);
+        $this->getRepository()->remove($domain);
     }
 
     public function handlePrimary(Args $args, IO $io)
@@ -136,15 +131,6 @@ class DomainHandler extends BaseHandler
         $this->validate('domain', $domain, new Regex('!^[a-zA-Z0-9\.\-]+$!'));
 
         return trim(mb_strtolower($domain), '.');
-    }
-
-    public function sanitizeEmail()
-    {
-        $email = $this->getParameter('admin_email');
-
-        $this->validate('email', $email, new Email());
-
-        return trim(preg_replace("/[^a-z0-9]/", '.', $email), '.');
     }
 
     /**

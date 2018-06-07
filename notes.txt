@@ -1,2 +1,2 @@
-todo domains: effacer les $email envoyés par le handler, utiliser l'email en config
+todo domains: verifier sur ocarina si *.beast.systems a de l'interet
 todo emails: roundcube
