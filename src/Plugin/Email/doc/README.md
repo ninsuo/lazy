@@ -10,7 +10,7 @@ be good to go.
 Install the following packages first:
 
 ```
-apt-get install wget nano dbconfig-common sqlite3 php7.1-mbstring php7.1-imap
+apt-get install wget nano dbconfig-common mysql3 php7.1-mbstring php7.1-imap
 service apache2 restart
 ```
 
@@ -64,6 +64,7 @@ $CONF['database_password'] = 'somepassword';
 $CONF['database_name'] = 'postfixadmin';
 $CONF['domain_path'] = 'NO';
 $CONF['domain_in_mailbox'] = 'YES';
+$CONF['encrypt'] = 'dovecot:CRYPT';
 ```
 
 Expose the website:
@@ -92,7 +93,7 @@ Warning: take note of the postmaster address you just created, it will be requir
 First, let's install Postfix.
 
 ```
-apt-get install postfix
+apt-get install postfix postfix-mysql
 ```
 
 When prompted, 
@@ -104,7 +105,7 @@ When prompted,
 Now, create a mapping files:
 
 ```
-/etc/postfix/sqlite_virtual_alias_maps.cf
+/etc/postfix/mysql_virtual_alias_maps.cf
 
 user = postfixadmin
 password = somepassword
@@ -115,27 +116,27 @@ query = SELECT goto FROM alias WHERE address='%s' AND active = '1'
 ```
 
 ```
-/etc/postfix/sqlite_virtual_alias_domain_maps.cf
+/etc/postfix/mysql_virtual_alias_domain_maps.cf
 
 user = postfixadmin
 password = somepassword
 hosts = 127.0.0.1
 dbname = postfixadmin
-query = SELECT goto FROM alias,alias_domain WHERE alias_domain.alias_domain = '%d' and alias.address = printf('%u', '@', alias_domain.target_domain) AND alias.active = 1 AND alias_domain.active='1'
+query = SELECT goto FROM alias,alias_domain WHERE alias_domain.alias_domain = '%d' and alias.address = CONCAT('%u', '@', alias_domain.target_domain) AND alias.active = 1 AND alias_domain.active='1'
 ```
 
 ```
-/etc/postfix/sqlite_virtual_alias_domain_catchall_maps.cf
+/etc/postfix/mysql_virtual_alias_domain_catchall_maps.cf
 
 user = postfixadmin
 password = somepassword
 hosts = 127.0.0.1
 dbname = postfixadmin
-query  = SELECT goto FROM alias,alias_domain WHERE alias_domain.alias_domain = '%d' and alias.address = printf('@', alias_domain.target_domain) AND alias.active = 1 AND alias_domain.active='1'
+query = SELECT goto FROM alias,alias_domain WHERE alias_domain.alias_domain = '%d' and alias.address = CONCAT('@', alias_domain.target_domain) AND alias.active = 1 AND alias_domain.active='1'
 ```
 
 ```
-/etc/postfix/sqlite_virtual_domains_maps.cf
+/etc/postfix/mysql_virtual_domains_maps.cf
 
 user = postfixadmin
 password = somepassword
@@ -145,7 +146,7 @@ query = SELECT domain FROM domain WHERE domain='%s' AND active = '1'
 ```
 
 ```
-/etc/postfix/sqlite_virtual_mailbox_maps.cf
+/etc/postfix/mysql_virtual_mailbox_maps.cf
 
 user = postfixadmin
 password = somepassword
@@ -155,13 +156,13 @@ query = SELECT maildir FROM mailbox WHERE username='%s' AND active = '1'
 ```
 
 ```
-/etc/postfix/sqlite_virtual_alias_domain_mailbox_maps.cf
+/etc/postfix/mysql_virtual_alias_domain_mailbox_maps.cf
 
 user = postfixadmin
 password = somepassword
 hosts = 127.0.0.1
 dbname = postfixadmin
-query = SELECT maildir FROM mailbox,alias_domain WHERE alias_domain.alias_domain = '%d' and mailbox.username = printf('%u', '@', alias_domain.target_domain) AND mailbox.active = 1 AND alias_domain.active='1'
+query = SELECT maildir FROM mailbox,alias_domain WHERE alias_domain.alias_domain = '%d' and mailbox.username = CONCAT('%u', '@', alias_domain.target_domain) AND mailbox.active = 1 AND alias_domain.active='1'
 ```
 
 Now, run the following commands to configure postfix:
@@ -169,12 +170,12 @@ Now, run the following commands to configure postfix:
 ```
 postconf -e "myhostname = $(hostname -A)"
  
-postconf -e "virtual_mailbox_domains = sqlite:/etc/postfix/sqlite_virtual_domains_maps.cf"
-postconf -e "virtual_alias_maps =  sqlite:/etc/postfix/sqlite_virtual_alias_maps.cf, sqlite:/etc/postfix/sqlite_virtual_alias_domain_maps.cf, sqlite:/etc/postfix/sqlite_virtual_alias_domain_catchall_maps.cf"
-postconf -e "virtual_mailbox_maps = sqlite:/etc/postfix/sqlite_virtual_mailbox_maps.cf, sqlite:/etc/postfix/sqlite_virtual_alias_domain_mailbox_maps.cf"
- 
-postconf -e "smtpd_tls_cert_file = /etc/ssl/certs/ssl-cert-snakeoil.pem"
-postconf -e "smtpd_tls_key_file = /etc/ssl/private/ssl-cert-snakeoil.key"
+postconf -e "virtual_mailbox_domains = mysql:/etc/postfix/mysql_virtual_domains_maps.cf"
+postconf -e "virtual_alias_maps =  mysql:/etc/postfix/mysql_virtual_alias_maps.cf, mysql:/etc/postfix/mysql_virtual_alias_domain_maps.cf, mysql:/etc/postfix/mysql_virtual_alias_domain_catchall_maps.cf"
+postconf -e "virtual_mailbox_maps = mysql:/etc/postfix/mysql_virtual_mailbox_maps.cf, mysql:/etc/postfix/mysql_virtual_alias_domain_mailbox_maps.cf"
+
+postconf -e "smtpd_tls_cert_file = /etc/letsencrypt/live/mail.fuz.org/fullchain.pem"
+postconf -e "smtpd_tls_key_file = /etc/letsencrypt/live/mail.fuz.org/privkey.pem"
 postconf -e "smtpd_use_tls = yes"
 postconf -e "smtpd_tls_auth_only = yes"
  
@@ -189,6 +190,8 @@ postconf -e "inet_protocols = ipv4"
  
 postconf -e "virtual_transport = lmtp:unix:private/dovecot-lmtp"
 ```
+
+postconf -e dovecot_destination_recipient_limit=1
 
 Open `/etc/postfix/master.cf` and check that the options for 
 `submission inet n` and `smtps inet n` sections match the following:
@@ -223,12 +226,64 @@ smtps     inet  n       -       y       -       -       smtpd
   -o milter_macro_daemon_name=ORIGINATING
 ```
 
-Enable postfix
+We'll enable postfix once Roundcube will be installed, because we need
+the letsencrypt certificate associated to it.
+
+## Sasl
+
+Let's install sasl...
 
 ```
-systemctl enable postfix
-systemctl restart postfix
+apt-get install libsasl2-modules sasl2-bin libpam-mysql bcrypt
 ```
+
+Edit sasl configuration:
+
+```
+emacs -nw /etc/default/saslauthd
+
+START=yes
+OPTIONS="-c -m /var/spool/postfix/var/run/saslauthd"
+```
+
+Add Postfix to the sasl group:
+
+```
+adduser postfix sasl
+```
+
+Then restart sasl:
+
+```
+service saslauthd restart
+```
+
+And change the permissions of the created directory:
+
+```
+chmod a+x /var/spool/postfix/var/run/saslauthd
+```
+
+Now open `/etc/pam-mysql.conf`:
+
+```
+users.host              = 127.0.0.1
+users.database          = postfixadmin
+users.db_user           = postfixadmin
+users.db_passwd         = 4RaZD583F6HHul2qiFsovP9yCzVS8KxW
+users.table             = mailbox
+users.user_column       = username
+users.password_column   = password
+users.password_crypt    = 1
+```
+
+Restart again:
+
+```
+service saslauthd restart
+```
+
+All other options should be commented.
 
 ## Dovecot
 
@@ -261,12 +316,14 @@ auth_mechanisms = plain login
 
 For the next one, check in your postfixadmin configuration the value of
 `$CONF['encrypt']` to ensure it will match with the default_pass_scheme.
+Because postfixadmin, dovecot and pam should have the same encryption
+method, I strongly recommand crypt.
 
 For example, I can see:
 
 ```
 root@beastsys:/var/www/sd-50799.dedibox.fr/postfixadmin-3.2# cat config.local.php |grep encrypt
-$CONF['encrypt'] = 'md5crypt';
+$CONF['encrypt'] = 'crypt';
 ```
 
 Edit `/etc/dovecot/dovecot-sql.conf.ext`:
@@ -275,11 +332,11 @@ Edit `/etc/dovecot/dovecot-sql.conf.ext`:
 driver = mysql
 connect = host=127.0.0.1 dbname=postfixadmin user=postfixadmin password=somepassword
 
-default_pass_scheme = MD5-CRYPT
+default_pass_scheme = CRYPT
 
 user_query = \
    SELECT '/var/vmail/%d/%n' as home, 'maildir:/var/vmail/%d/%n' as mail, \
-   150 AS uid, 8 AS gid, printf('dirsize:storage=', quota) AS quota \
+   150 AS uid, 8 AS gid, CONCAT('dirsize:storage=', quota) AS quota \
    FROM mailbox WHERE username = '%u' AND active = '1'
 
 password_query = \
@@ -292,6 +349,8 @@ Edit `/etc/dovecot/conf.d/10-ssl.conf`:
 
 ```
 ssl = yes
+ssl_cert = </etc/letsencrypt/live/mail.fuz.org/fullchain.pem
+ssl_key = </etc/letsencrypt/live/mail.fuz.org/privkey.pem
 ```
 
 Edit `/etc/dovecot/conf.d/15-lda.conf` (take care to put the same email as
@@ -346,14 +405,11 @@ Change a few permissions:
 ```
 chown -R vmail:dovecot /etc/dovecot
 chmod -R o-rwx /etc/dovecot
+chmod 751 /etc/dovecot
+chmod 644 /etc/dovecot/dovecot.conf
 ```
 
-Enable dovcot:
-
-```
-systemctl enable dovecot
-systemctl restart dovecot
-```
+We'll enable dovecot once roundcube will be installed (mail.fuz.org).
 
 ## DNS
 
@@ -402,13 +458,40 @@ chown -R www-data:www-data /var/www/mail.fuz.org/exposed
 
 Go to https://mail.fuz.org/installer/ and follow the instructions.
 
-Do not forget to click on "Initialize database" on the last step.
+1) Put tls://mail.fuz.org as mail server (no localhost!)
+
+2) Do not forget to click on "Initialize database" on the last step.
 
 Finally, remove the `installer` directory:
 
 ```
 rm -r installer
 ```
+
+Edit the `config/config.inc.php` file and add:
+
+```
+$config['smtp_server'] = 'tls://mail.fuz.org';
+$config['smtp_port'] = 587;
+```
+
+Enable postfix
+
+```
+systemctl enable postfix
+systemctl restart postfix
+```
+
+Enable dovecot:
+
+```
+systemctl enable dovecot
+systemctl restart dovecot
+```
+
+Test to send yourself an email. In case of issues:
+- check the `/var/log/syslog`
+- check errors from roundcube at `/var/www/mail.fuz.org/logs/errors`
 
 ## Final word
 
