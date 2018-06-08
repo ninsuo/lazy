@@ -371,8 +371,44 @@ dns lookup on that ip.
 
 ## Roundcube
 
+Go to https://roundcube.net and download the latest and complete version of 
+roundcube. Put it in `/root/` on your server.
 
 
+```
+tar xzf roundcubemail-1.3.6-complete.tar.gz
+cd roundcubemail-1.3.6
+mv composer.json-dist composer.json
+composer install --no-dev
+cd ..
+```
+
+Now create the mysql database:
+
+```mysql
+CREATE DATABASE roundcubemail;
+GRANT ALL PRIVILEGES ON roundcubemail.* TO 'roundcubemail'@'127.0.0.1' IDENTIFIED BY 'somepassword';
+FLUSH PRIVILEGES;
+```
+
+Create the website configuration:
+
+```
+lazy website add mail.fuz.org
+rm -r /var/www/mail.fuz.org/exposed
+mv roundcubemail-1.3.6 /var/www/mail.fuz.org/exposed
+chown -R www-data:www-data /var/www/mail.fuz.org/exposed
+```
+
+Go to https://mail.fuz.org/installer/ and follow the instructions.
+
+Do not forget to click on "Initialize database" on the last step.
+
+Finally, remove the `installer` directory:
+
+```
+rm -r installer
+```
 
 ## Final word
 

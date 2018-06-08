@@ -1,2 +1,2 @@
-todo domains: verifier sur ocarina si *.beast.systems a de l'interet
-todo emails: roundcube
+websites: add chown -R www-data:www-data of the created directory
+emails: create an ssl certificate for dovecot
