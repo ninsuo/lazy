@@ -38,6 +38,7 @@ class WebsiteRepository extends BaseService
         $this->exec('mkdir -p :dir', ['dir' => $exposed]);
         file_put_contents(sprintf('%s/index.html', $exposed), sprintf('Hello, %s!', $fqdn));
         $this->exec('mkdir -p :dir', ['dir' => sprintf('%s/logs', $dir)]);
+        $this->exec('chown -R www-data:www-data :dir', $dir);
 
         // Initial standard (http:80) configuration in order to go through Letsencrypt challenge.
 
@@ -161,22 +162,6 @@ class WebsiteRepository extends BaseService
         return $backups;
     }
 
-    protected function cleanBackups()
-    {
-        $exec = $this->exec('ls -t :dir | grep -v json', [
-            'dir' => $this->getBackupDirectory(),
-        ]);
-
-        $backups = explode("\n", $exec->stdout);
-
-        $count = count($backups);
-        if ($count > 9) {
-            for ($i = 9; $i < $count; $i++) {
-                $this->removeBackup($backups[$i]);
-            }
-        }
-   }
-
     public function createBackup($title)
     {
         $this->cleanBackups();
@@ -229,17 +214,6 @@ class WebsiteRepository extends BaseService
         $this->success('Successfully restored backup %s', $id);
     }
 
-    protected function removeBackup($id)
-    {
-        $backupDir = sprintf('%s/%s', $this->getBackupDirectory(), $id);
-        $backupFile = sprintf('%s.json', $backupDir);
-
-        $this->exec('rm -rf :dir :file', [
-            'dir' => $backupDir,
-            'file' => $backupFile,
-        ]);
-    }
-
     /**
      * @return string
      */
@@ -254,5 +228,32 @@ class WebsiteRepository extends BaseService
         }
 
         return $dir;
+    }
+
+    protected function cleanBackups()
+    {
+        $exec = $this->exec('ls -t :dir | grep -v json', [
+            'dir' => $this->getBackupDirectory(),
+        ]);
+
+        $backups = explode("\n", $exec->stdout);
+
+        $count = count($backups);
+        if ($count > 9) {
+            for ($i = 9; $i < $count; $i++) {
+                $this->removeBackup($backups[$i]);
+            }
+        }
+   }
+
+    protected function removeBackup($id)
+    {
+        $backupDir = sprintf('%s/%s', $this->getBackupDirectory(), $id);
+        $backupFile = sprintf('%s.json', $backupDir);
+
+        $this->exec('rm -rf :dir :file', [
+            'dir' => $backupDir,
+            'file' => $backupFile,
+        ]);
     }
 }

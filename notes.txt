@@ -1,2 +1,2 @@
-websites: add chown -R www-data:www-data of the created directory
+websites: separate website and certificate
 emails: create an ssl certificate for dovecot
