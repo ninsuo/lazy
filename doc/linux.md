@@ -142,6 +142,12 @@ If you wish to manage websites, you should follow the apache & cie installation.
 
 Read the doc [here](../src/Plugin/Website/doc/README.md)
 
+### ssl certificates
+
+If you wish to manage certificates, you should follow the letsencrypt installation.
+
+Read the doc [here](../src/Plugin/Certificate/doc/README.md)
+
 ### git and github
 
 First, insstall git:

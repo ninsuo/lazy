@@ -13,7 +13,7 @@ class WebsiteConfiguration extends BaseConfiguration
     {
         $config
             ->beginCommand('website')
-                ->setDescription('Manage websites')
+                ->setDescription('Manage Apache websites')
                 ->setHandler($this->container['website.handler'])
                 ->beginSubCommand('list')
                     ->setHandlerMethod('handleList')

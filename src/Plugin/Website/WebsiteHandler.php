@@ -4,7 +4,6 @@ namespace Lazy\Plugin\Website;
 
 use Lazy\Core\Base\BaseHandler;
 use Lazy\Core\Exception\StopExecutionException;
-use Symfony\Component\Validator\Constraints\Email;
 use Symfony\Component\Validator\Constraints\Regex;
 use Webmozart\Console\Api\Args\Args;
 use Webmozart\Console\Api\IO\IO;
@@ -33,9 +32,7 @@ class WebsiteHandler extends BaseHandler
             throw new StopExecutionException('Website %s already exists!', $fqdn);
         }
 
-        $email = $this->sanitizeEmail();
-
-        $this->getRepository()->create($fqdn, $email);
+        $this->getRepository()->create($fqdn);
     }
 
     public function handleEdit(Args $args, IO $io)
@@ -57,6 +54,10 @@ class WebsiteHandler extends BaseHandler
         $websites = $this->getRepository()->getWebsites();
         if (!in_array($website, $websites)) {
             throw new StopExecutionException('Website %s does not exist!', $website);
+        }
+
+        if ($this->container['certificate.handler']->isCertificate($website)) {
+            throw new StopExecutionException('Certificate %s exists: remove it first as it won\'t be possible to renew it anymore.', $website);
         }
 
         $this->getRepository()->remove($website);
@@ -104,15 +105,6 @@ class WebsiteHandler extends BaseHandler
         $this->validate('fqdn', $fqdn, new Regex('!^[a-zA-Z0-9\.\-]+$!'));
 
         return mb_strtolower($fqdn);
-    }
-
-    public function sanitizeEmail()
-    {
-        $email = $this->getParameter('admin_email');
-
-        $this->validate('email', $email, new Email());
-
-        return $email;
     }
 
     /**

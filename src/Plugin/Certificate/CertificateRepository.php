@@ -1,49 +1,43 @@
 <?php
 
-namespace Lazy\Plugin\Website;
+namespace Lazy\Plugin\Certificate;
 
 use Lazy\Core\Base\BaseService;
 use Ramsey\Uuid\Uuid;
 
-class WebsiteRepository extends BaseService
+class CertificateRepository extends BaseService
 {
-    public function getWebsites()
+    public function getCertificates()
     {
-        $websites = [];
-        $output   = $this->exec("grep -Ri 'ServerName' /etc/apache2/sites-available")->stdout;
+        $certificates = [];
+        $output       = $this->exec("ls /etc/letsencrypt/renewal/*.conf")->stdout;
         foreach (array_filter(explode("\n", $output)) as $line) {
-            $tokens = array_values(array_filter(explode(' ', str_replace("\t", ' ', $line))));
-            if (count($tokens) == 3) {
-                $websites[] = $tokens[2];
-            }
+            $certificates[] = substr($line, 0, -4);
         }
 
-        return array_unique($websites);
+        return $certificates;
     }
 
-    public function isWebsite($fqdn)
+    public function isCertificate($fqdn)
     {
-        return in_array($fqdn, $this->getWebsites());
+        return in_array($fqdn, $this->getCertificates());
     }
 
     public function create($fqdn)
     {
-        $this->createBackup(sprintf('Creating website %s', $fqdn));
+        $this->createBackup(sprintf('Creating certificate %s', $fqdn));
 
-        // Create directory structure
+        $dir = sprintf('%s/%s', $this->getParameter('web_dir'), $fqdn);
 
-        $dir     = sprintf('%s/%s', $this->getParameter('web_dir'), $fqdn);
-        $exposed = sprintf('%s/exposed', $dir);
+        // Create SSL certificate
 
-        if (!is_dir($dir)) {
-            $this->exec('mkdir -p :dir', ['dir' => sprintf('%s/app', $dir)]);
-            $this->exec('mkdir -p :dir', ['dir' => $exposed]);
-            file_put_contents(sprintf('%s/index.html', $exposed), sprintf('Hello, %s!', $fqdn));
-            $this->exec('mkdir -p :dir', ['dir' => sprintf('%s/logs', $dir)]);
-            $this->exec('chown -R www-data:www-data :dir', $dir);
-        }
+        $this->exec('certbot --non-interactive --agree-tos --email :email certonly --webroot --webroot-path=:webroot --domains :fqdn', [
+            'webroot' => sprintf('%s/exposed', $dir),
+            'email'   => $this->getParameter('admin_email'),
+            'fqdn'    => $fqdn,
+        ]);
 
-        // Initial standard (http:80) configuration (necessary to go through Letsencrypt challenge).
+        // Regenerating Apache configuration for SSL (http:80 and https:443) configuration
 
         $content = $this->render(__DIR__.'/NNN-sub.domain.tld.conf.twig', [
             'fqdn'  => $fqdn,
@@ -61,39 +55,12 @@ class WebsiteRepository extends BaseService
 
         $this->exec('service apache2 restart');
 
-        $this->success('Website %s available at http://%s.', sprintf('%s/exposed', $dir), $fqdn);
-    }
-
-    public function edit($fqdn)
-    {
-        $backupId = $this->createBackup(sprintf('Editing website %s', $fqdn));
-
-        edit:
-
-        $file = sprintf('/etc/apache2/sites-available/000-%s.conf', $fqdn);
-
-        $this->exec(sprintf('%s %s', $this->getParameter('editor'), $file), [], true);
-        $this->info('This is your configuration for website %s', $fqdn);
-        $this->raw(file_get_contents($file));
-
-        switch ($this->prompt('Is this configuration ok?', ['yes', 'edit', 'abort'])) {
-            case 'yes':
-                $this->exec('service apache2 restart');
-                $this->success('Successfully edited website %s', $fqdn);
-                break;
-            case 'edit':
-                goto edit;
-            case 'abort':
-                $this->restoreBackup($backupId);
-                $this->removeBackup($backupId);
-                $this->info('Website edition has been cancelled.');
-                break;
-        }
+        $this->success('Website %s available at https://%s.', sprintf('%s/exposed', $dir), $fqdn);
     }
 
     public function remove($fqdn)
     {
-        $this->createBackup(sprintf('Removing website %s', $fqdn));
+        $this->createBackup(sprintf('Removing certificate %s', $fqdn));
 
         $files = [
             '/etc/apache2/sites-available/000-%s.conf',
@@ -104,9 +71,16 @@ class WebsiteRepository extends BaseService
             $this->exec('rm -f :file', ['file' => sprintf($file, $fqdn)]);
         }
 
+        $this->exec('certbot delete --non-interactive --apache --agree-tos --cert-name :fqdn', [
+            'fqdn' => $fqdn,
+        ]);
+
         $this->exec('service apache2 restart');
 
-        $this->success('Successfully removed website %s.', $fqdn);
+        $this->success('Successfully removed certificate %s.', $fqdn);
+        $this->info('Regenerating website configuration without HTTPS...');
+
+        $this->container['website.repository']->create($fqdn);
     }
 
     public function listBackups()
@@ -138,6 +112,10 @@ class WebsiteRepository extends BaseService
             'dir' => sprintf('%s/apache2', $backupDir),
         ]);
 
+        $this->exec('cp -r /etc/letsencrypt :dir', [
+            'dir' => sprintf('%s/letsencrypt', $backupDir),
+        ]);
+
         $backupTrace = sprintf('%s/%s.json', $this->getBackupDirectory(), $id);
 
         file_put_contents($backupTrace, json_encode([
@@ -163,17 +141,19 @@ class WebsiteRepository extends BaseService
             'source' => sprintf('%s/apache2', $sourceDir),
         ]);
 
+        $this->exec('rm -rf /etc/letsencrypt');
+        $this->exec('cp -r :source /etc/letsencrypt', [
+            'source' => sprintf('%s/letsencrypt', $sourceDir),
+        ]);
+
         $this->exec('service apache2 start');
 
         $this->success('Successfully restored backup %s', $id);
     }
 
-    /**
-     * @return string
-     */
     public function getBackupDirectory()
     {
-        $dir = $this->getParameter('backup_dir').'/website';
+        $dir = $this->getParameter('backup_dir').'/certificate';
 
         if (!is_dir($dir)) {
             $this->exec('mkdir -p :dir', [

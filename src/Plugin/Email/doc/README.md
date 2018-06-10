@@ -64,7 +64,7 @@ $CONF['database_password'] = 'somepassword';
 $CONF['database_name'] = 'postfixadmin';
 $CONF['domain_path'] = 'NO';
 $CONF['domain_in_mailbox'] = 'YES';
-$CONF['encrypt'] = 'dovecot:CRYPT';
+$CONF['encrypt'] = 'md5';
 ```
 
 Expose the website:
@@ -234,7 +234,7 @@ the letsencrypt certificate associated to it.
 Let's install sasl...
 
 ```
-apt-get install libsasl2-modules sasl2-bin libpam-mysql bcrypt
+apt-get install libsasl2-modules sasl2-bin libpam-mysql bcrypt pamtester
 ```
 
 Edit sasl configuration:
@@ -264,26 +264,22 @@ And change the permissions of the created directory:
 chmod a+x /var/spool/postfix/var/run/saslauthd
 ```
 
-Now open `/etc/pam-mysql.conf`:
+Open `/etc/pam.d/smtp` and add the following:
 
 ```
-users.host              = 127.0.0.1
-users.database          = postfixadmin
-users.db_user           = postfixadmin
-users.db_passwd         = 4RaZD583F6HHul2qiFsovP9yCzVS8KxW
-users.table             = mailbox
-users.user_column       = username
-users.password_column   = password
-users.password_crypt    = 1
+auth required pam_mysql.so host=127.0.0.1 user=postfixadmin passwd=4RaZD583F6HHul2qiFsovP9yCzVS8KxW db=postfixadmin table=mailbox usercolumn=username passwdcolumn=password crypt=3 where=active=1 debug
 ```
+
+All other options should be commented.
+
+I also needed a hashing method supported by postfixadmin, pam,
+roundcube and doveco... thus md5 is used :\
 
 Restart again:
 
 ```
 service saslauthd restart
 ```
-
-All other options should be commented.
 
 ## Dovecot
 
@@ -323,7 +319,7 @@ For example, I can see:
 
 ```
 root@beastsys:/var/www/sd-50799.dedibox.fr/postfixadmin-3.2# cat config.local.php |grep encrypt
-$CONF['encrypt'] = 'crypt';
+$CONF['encrypt'] = 'md5';
 ```
 
 Edit `/etc/dovecot/dovecot-sql.conf.ext`:
@@ -332,7 +328,7 @@ Edit `/etc/dovecot/dovecot-sql.conf.ext`:
 driver = mysql
 connect = host=127.0.0.1 dbname=postfixadmin user=postfixadmin password=somepassword
 
-default_pass_scheme = CRYPT
+default_pass_scheme = PLAIN-MD5
 
 user_query = \
    SELECT '/var/vmail/%d/%n' as home, 'maildir:/var/vmail/%d/%n' as mail, \
@@ -473,6 +469,7 @@ Edit the `config/config.inc.php` file and add:
 ```
 $config['smtp_server'] = 'tls://mail.fuz.org';
 $config['smtp_port'] = 587;
+$config['smtp_user'] = '%u@%d'
 ```
 
 Enable postfix

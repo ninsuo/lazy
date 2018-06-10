@@ -1,4 +1,3 @@
-websites: separate website and certificate
 emails: create an ssl certificate for dovecot
 emails: implement handlers / repository based on postfixadmin config
 emails: roundcube_path/bin/cleandb.sh doit être cronné 1x/jour
