@@ -106,6 +106,11 @@ class WebsiteRepository extends BaseService
 
         $this->exec('service apache2 restart');
 
+        $dir = sprintf('%s/%s', $this->getParameter('web_dir'), $fqdn);
+        if (is_dir($dir)) {
+            $this->exec('rm -rf :dir');
+        }
+
         $this->success('Successfully removed website %s.', $fqdn);
     }
 
@@ -157,8 +162,6 @@ class WebsiteRepository extends BaseService
 
     public function restoreBackup($id)
     {
-        $this->exec('service apache2 stop');
-
         $this->createBackup(sprintf('Restoring backup %s', $id));
 
         $sourceDir = sprintf('%s/%s', $this->getBackupDirectory(), $id);
@@ -175,11 +178,11 @@ class WebsiteRepository extends BaseService
 
         $this->exec('mv :web_dir /tmp/:uuid-old', [
             'web_dir' => $this->getParameter('web_dir'),
-            'uuid' => $uuid,
+            'uuid'    => $uuid,
         ]);
 
         $this->exec('mv /tmp/:uuid :web_dir', [
-            'uuid' => $uuid,
+            'uuid'    => $uuid,
             'web_dir' => $this->getParameter('web_dir'),
         ]);
 
@@ -187,7 +190,7 @@ class WebsiteRepository extends BaseService
             'uuid' => $uuid,
         ]);
 
-        $this->exec('service apache2 start');
+        $this->exec('service apache2 restart');
 
         $this->success('Successfully restored backup %s', $id);
     }
