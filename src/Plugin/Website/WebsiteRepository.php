@@ -132,7 +132,7 @@ class WebsiteRepository extends BaseService
             'dir' => sprintf('%s/apache2', $backupDir),
         ]);
 
-        $this->exec('rsync -l :web_dir :dir', [
+        $this->exec('rsync -lr :web_dir :dir', [
             'web_dir' => $this->getParameter('web_dir'),
             'dir'     => sprintf('%s/web_dir', $backupDir),
         ]);
@@ -156,27 +156,27 @@ class WebsiteRepository extends BaseService
         $sourceDir = sprintf('%s/%s', $this->getBackupDirectory(), $id);
 
         $this->exec('rm -rf /etc/apache2');
-        $this->exec('cp -r :source /etc/apache2', [
-            'source' => sprintf('%s/apache2', $sourceDir),
+        $this->exec('cp -r :backup /etc/apache2', [
+            'backup' => sprintf('%s/apache2', $sourceDir),
         ]);
 
-        $this->exec('rsync -l :source /tmp/:uuid', [
-            'source' => sprintf('%s/web_dir', $sourceDir),
-            'uuid'   => $uuid = Uuid::uuid4(),
+        $this->exec('rsync -lr :backup :temp', [
+            'backup' => sprintf('%s/web_dir/', $sourceDir),
+            'temp'   => sprintf('/tmp/%s', $uuid = Uuid::uuid4()),
         ]);
 
-        $this->exec('mv :web_dir /tmp/:uuid-old', [
+        $this->exec('mv :web_dir :temp_old', [
+            'web_dir'  => $this->getParameter('web_dir'),
+            'temp_old' => sprintf('/tmp/%s-old', $uuid),
+        ]);
+
+        $this->exec('mv :temp :web_dir', [
+            'temp'    => sprintf('/tmp/%s', $uuid),
             'web_dir' => $this->getParameter('web_dir'),
-            'uuid'    => $uuid,
         ]);
 
-        $this->exec('mv /tmp/:uuid :web_dir', [
-            'uuid'    => $uuid,
-            'web_dir' => $this->getParameter('web_dir'),
-        ]);
-
-        $this->exec('rm -rf /tmp/:uuid-old', [
-            'uuid' => $uuid,
+        $this->exec('rm -rf :temp_old', [
+            'temp_old' => sprintf('/tmp/%s-old', $uuid),
         ]);
 
         $this->exec('service apache2 restart');
