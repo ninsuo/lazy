@@ -12,7 +12,7 @@ class CertificateRepository extends BaseService
         $certificates = [];
         $output       = $this->exec("ls /etc/letsencrypt/renewal/*.conf")->stdout;
         foreach (array_filter(explode("\n", $output)) as $line) {
-            $certificates[] = substr($line, 0, -4);
+            $certificates[] = substr($line, strlen('/etc/letsencrypt/renewal/'), -5);
         }
 
         return $certificates;
