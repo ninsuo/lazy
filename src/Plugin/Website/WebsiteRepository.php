@@ -40,7 +40,9 @@ class WebsiteRepository extends BaseService
             $this->exec('mkdir -p :dir', ['dir' => $exposed]);
             file_put_contents(sprintf('%s/index.html', $exposed), sprintf('Hello, %s!', $fqdn));
             $this->exec('mkdir -p :dir', ['dir' => sprintf('%s/logs', $dir)]);
-            $this->exec('chown -R www-data:www-data :dir', $dir);
+            $this->exec('chown -R www-data:www-data :dir', [
+                'dir' => $dir,
+            ]);
         }
 
         // Initial standard (http:80) configuration (necessary to go through Letsencrypt challenge).
