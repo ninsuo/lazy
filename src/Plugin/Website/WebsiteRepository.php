@@ -138,6 +138,11 @@ class WebsiteRepository extends BaseService
             'dir' => sprintf('%s/apache2', $backupDir),
         ]);
 
+        $this->exec('rsync -l :web_dir :dir', [
+            'web_dir' => $this->getParameter('web_dir'),
+            'dir'     => sprintf('%s/web_dir', $backupDir),
+        ]);
+
         $backupTrace = sprintf('%s/%s.json', $this->getBackupDirectory(), $id);
 
         file_put_contents($backupTrace, json_encode([
@@ -161,6 +166,25 @@ class WebsiteRepository extends BaseService
         $this->exec('rm -rf /etc/apache2');
         $this->exec('cp -r :source /etc/apache2', [
             'source' => sprintf('%s/apache2', $sourceDir),
+        ]);
+
+        $this->exec('rsync -l :source /tmp/:uuid', [
+            'source' => sprintf('%s/web_dir', $sourceDir),
+            'uuid'   => $uuid = Uuid::uuid4(),
+        ]);
+
+        $this->exec('mv :web_dir /tmp/:uuid-old', [
+            'web_dir' => $this->getParameter('web_dir'),
+            'uuid' => $uuid,
+        ]);
+
+        $this->exec('mv /tmp/:uuid :web_dir', [
+            'uuid' => $uuid,
+            'web_dir' => $this->getParameter('web_dir'),
+        ]);
+
+        $this->exec('rm -rf /tmp/:uuid-old', [
+            'uuid' => $uuid,
         ]);
 
         $this->exec('service apache2 start');
