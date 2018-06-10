@@ -131,7 +131,7 @@ class DomainRepository extends BaseService
         $id        = Uuid::uuid4();
         $backupDir = sprintf('%s/%s', $this->getBackupDirectory(), $id);
 
-        $this->exec('cp -r /etc/bind :dir', [
+        $this->exec('rsync -lra /etc/bind :dir', [
             'dir' => $backupDir,
         ]);
 
@@ -158,7 +158,7 @@ class DomainRepository extends BaseService
             'target' => $targetDir,
         ]);
 
-        $this->exec('cp -r :source :target', [
+        $this->exec('rsync -lra :source :target', [
             'source' => $sourceDir,
             'target' => $targetDir,
         ]);

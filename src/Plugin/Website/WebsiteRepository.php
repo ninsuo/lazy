@@ -128,11 +128,11 @@ class WebsiteRepository extends BaseService
 
         $this->exec('mkdir -p :dir', ['dir' => $backupDir]);
 
-        $this->exec('cp -r /etc/apache2 :dir', [
+        $this->exec('rsync -lra /etc/apache2 :dir', [
             'dir' => sprintf('%s/apache2', $backupDir),
         ]);
 
-        $this->exec('rsync -lr :web_dir :dir', [
+        $this->exec('rsync -lra :web_dir :dir', [
             'web_dir' => $this->getParameter('web_dir'),
             'dir'     => sprintf('%s/web_dir', $backupDir),
         ]);
@@ -156,11 +156,11 @@ class WebsiteRepository extends BaseService
         $sourceDir = sprintf('%s/%s', $this->getBackupDirectory(), $id);
 
         $this->exec('rm -rf /etc/apache2');
-        $this->exec('cp -r :backup /etc/apache2', [
+        $this->exec('rsync -lra :backup /etc/apache2', [
             'backup' => sprintf('%s/apache2', $sourceDir),
         ]);
 
-        $this->exec('rsync -lr :backup :temp', [
+        $this->exec('rsync -lra :backup :temp', [
             'backup' => sprintf('%s/web_dir/', $sourceDir),
             'temp'   => sprintf('/tmp/%s', $uuid = Uuid::uuid4()),
         ]);

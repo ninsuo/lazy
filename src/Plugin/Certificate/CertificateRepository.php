@@ -108,11 +108,11 @@ class CertificateRepository extends BaseService
 
         $this->exec('mkdir -p :dir', ['dir' => $backupDir]);
 
-        $this->exec('cp -r /etc/apache2 :dir', [
+        $this->exec('rsync -lra /etc/apache2 :dir', [
             'dir' => sprintf('%s/apache2', $backupDir),
         ]);
 
-        $this->exec('cp -r /etc/letsencrypt :dir', [
+        $this->exec('rsync -lra /etc/letsencrypt :dir', [
             'dir' => sprintf('%s/letsencrypt', $backupDir),
         ]);
 
@@ -137,12 +137,12 @@ class CertificateRepository extends BaseService
         $sourceDir = sprintf('%s/%s', $this->getBackupDirectory(), $id);
 
         $this->exec('rm -rf /etc/apache2');
-        $this->exec('cp -r :source /etc/apache2', [
+        $this->exec('rsync -lra :source /etc/apache2', [
             'source' => sprintf('%s/apache2', $sourceDir),
         ]);
 
         $this->exec('rm -rf /etc/letsencrypt');
-        $this->exec('cp -r :source /etc/letsencrypt', [
+        $this->exec('rsync -lra :source /etc/letsencrypt', [
             'source' => sprintf('%s/letsencrypt', $sourceDir),
         ]);
 
