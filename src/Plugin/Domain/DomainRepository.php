@@ -66,9 +66,7 @@ class DomainRepository extends BaseService
 
     public function edit($domain)
     {
-        $backupId = $this->createBackup(sprintf('Editing domain %s', $domain));
-
-        edit:
+        $this->createBackup(sprintf('Editing domain %s', $domain));
 
         $file = sprintf('/etc/bind/db.%s', $domain);
 
@@ -76,19 +74,8 @@ class DomainRepository extends BaseService
         $this->info('This is your configuration for domain %s', $domain);
         $this->raw(file_get_contents($file));
 
-        switch ($this->prompt('Is this configuration ok?', ['yes', 'edit', 'abort'])) {
-            case 'yes':
-                $this->exec('service bind9 restart');
-                $this->success('Successfully edited domain name %s', $domain);
-                break;
-            case 'edit':
-                goto edit;
-            case 'abort':
-                $this->restoreBackup($backupId);
-                $this->removeBackup($backupId);
-                $this->info('Domain edition has been cancelled.');
-                break;
-        }
+        $this->exec('service bind9 restart');
+        $this->success('Successfully edited domain name %s', $domain);
     }
 
     public function remove($domain)

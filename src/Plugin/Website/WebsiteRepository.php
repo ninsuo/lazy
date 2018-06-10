@@ -68,9 +68,7 @@ class WebsiteRepository extends BaseService
 
     public function edit($fqdn)
     {
-        $backupId = $this->createBackup(sprintf('Editing website %s', $fqdn));
-
-        edit:
+        $this->createBackup(sprintf('Editing website %s', $fqdn));
 
         $file = sprintf('/etc/apache2/sites-available/000-%s.conf', $fqdn);
 
@@ -78,19 +76,8 @@ class WebsiteRepository extends BaseService
         $this->info('This is your configuration for website %s', $fqdn);
         $this->raw(file_get_contents($file));
 
-        switch ($this->prompt('Is this configuration ok?', ['yes', 'edit', 'abort'])) {
-            case 'yes':
-                $this->exec('service apache2 restart');
-                $this->success('Successfully edited website %s', $fqdn);
-                break;
-            case 'edit':
-                goto edit;
-            case 'abort':
-                $this->restoreBackup($backupId);
-                $this->removeBackup($backupId);
-                $this->info('Website edition has been cancelled.');
-                break;
-        }
+        $this->exec('service apache2 restart');
+        $this->success('Successfully edited website %s', $fqdn);
     }
 
     public function remove($fqdn)
