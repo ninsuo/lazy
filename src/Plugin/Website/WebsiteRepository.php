@@ -97,7 +97,7 @@ class WebsiteRepository extends BaseService
 
         $dir = sprintf('%s/%s', $this->getParameter('web_dir'), $fqdn);
         if (is_dir($dir)) {
-            $this->exec('rm -rf :dir');
+            $this->exec('rm -rf :dir', ['dir' => $dir]);
         }
 
         $this->success('Successfully removed website %s.', $fqdn);
