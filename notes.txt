@@ -1,6 +1,5 @@
-emails: create an ssl certificate for dovecot
 emails: implement handlers / repository based on postfixadmin config
 emails: roundcube_path/bin/cleandb.sh doit être cronné 1x/jour
 emails: enable apache modules 'deflate', 'expires' and 'headers'
 emails: set date.timezone in php.ini ( sed -i -e "s/^;date\.timezone =.*$/date\.timezone = 'UTC'/" /etc/php5/apache2/php.ini )
-
+readme: put command list

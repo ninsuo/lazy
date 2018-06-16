@@ -56,7 +56,7 @@ class WebsiteHandler extends BaseHandler
             throw new StopExecutionException('Website %s does not exist!', $website);
         }
 
-        if ($this->container['certificate.handler']->isCertificate($website)) {
+        if ($this->container['certificate.repository']->isCertificate($website)) {
             throw new StopExecutionException('Certificate %s exists: remove it first as it won\'t be possible to renew it anymore.', $website);
         }
 

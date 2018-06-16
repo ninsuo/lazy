@@ -63,7 +63,8 @@ $configuration->addEventListener(\Webmozart\Console\Api\Event\ConsoleEvents::PRE
         $container['args']    = $e->getArgs();
         $container['io']      = $e->getIO();
         $container['verbose'] = $e->getArgs()->getOption('verbose');
-    });
+    }
+);
 
 $console = new \Webmozart\Console\ConsoleApplication($configuration);
 

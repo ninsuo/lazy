@@ -33,7 +33,7 @@ class CertificateHandler extends BaseHandler
         }
 
         if (!$this->container['website.repository']->isWebsite($fqdn)) {
-            throw new StopExecutionException('Create %s website first (to go through Let\'s encrypt challenges).');
+            throw new StopExecutionException('Create %s website first (to go through Let\'s encrypt challenges).', $fqdn);
         }
 
         $this->getRepository()->create($fqdn);
