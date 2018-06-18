@@ -85,6 +85,7 @@ Let's add a `monster` user, it will be used by automated robots.
 
 ```sh
 adduser monster
+usermod -g www-data monster
 ```
 
 Then, we want him to do `sudo` commands without being asked for a password. For automated actions, that's better.
@@ -130,11 +131,26 @@ service ssh restart
 
 Make sure root authentication is disabled/limited to rsa key-based.
 
-### Primary DNS server
+### DNS server
 
-If you wish to use domain names (that's better on a dedicated server), you should install and configure bind.
+Before, I was using bind9, but decided to delegate that to my domain name provider (Gandi).
 
-Read the doc [here](../src/Plugin/Domain/doc/README.md)
+For each of your domain names, make sure "@" points to your server's IP in a A record.
+
+Example of a valid DNS zones file:
+
+```
+@ 10800 IN SOA ns1.gandi.net. hostmaster.gandi.net. 1529316784 10800 3600 604800 10800
+@ 10800 IN A 62.210.207.60
+* 10800 IN A 62.210.207.60
+@ 10800 IN MX 10 spool.mail.gandi.net.
+@ 10800 IN MX 50 fb.mail.gandi.net.
+@ 10800 IN TXT "v=spf1 include:_mailcust.gandi.net ?all"
+webmail 10800 IN CNAME webmail.gandi.net.
+```
+
+`* 10800 IN A 62.210.207.60` makes sure you won't have to worry anymore about DNS configuration.
+
 
 ### mysql, redis, apache, php
 
@@ -162,11 +178,4 @@ This will have the same effect as putting this public key to your GitHub's accou
 
 ### lazy
 
-Now you can install lazy as it will help you to install emails, check the [readme](../README.md).
-
-### emails
-
-If you wish to manage email accounts associated with your domain names, continue here.
-
-Read the doc [here](../src/Plugin/Email/doc/README.md)
-
+Now you can install lazy, check the [readme](../README.md).

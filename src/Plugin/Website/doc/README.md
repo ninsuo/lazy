@@ -1,4 +1,4 @@
-# Websites & Certificates
+# Websites
 
 Using apache2, website management is really easy.
 
