@@ -90,7 +90,7 @@ class CertificateHandler extends BaseHandler
 
     public function sanitizeCertificate($fqdn)
     {
-        $this->validate('fqdn', $fqdn, new Regex('!^[a-zA-Z0-9\.\-]+$!'));
+        $this->validate('fqdn', $fqdn, new Regex('!^[a-zA-Z0-9\.\-_]+$!'));
 
         return mb_strtolower($fqdn);
     }

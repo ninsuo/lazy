@@ -102,7 +102,7 @@ class WebsiteHandler extends BaseHandler
 
     public function sanitizeWebsite($fqdn)
     {
-        $this->validate('fqdn', $fqdn, new Regex('!^[a-zA-Z0-9\.\-]+$!'));
+        $this->validate('fqdn', $fqdn, new Regex('!^[a-zA-Z0-9\.\-_]+$!'));
 
         return mb_strtolower($fqdn);
     }
