@@ -22,7 +22,7 @@ mysql-server redis-server sqlite \
 php7.1 php7.1-cli php7.1-common \
 php7.1-curl php7.1-gd php7.1-mysql php7.1-sqlite3 php-redis \
 php-ssh2 php7.1-mcrypt php7.1-mcrypt php7.1-zip php7.1-intl \
-php7.1-xml apache2 libapache2-mod-php7.1
+php7.1-xml apache2 libapache2-mod-php7.1 php-apcu
 ```
 
 Install php dependancy manager:
