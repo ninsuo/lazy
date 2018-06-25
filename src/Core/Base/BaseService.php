@@ -38,6 +38,7 @@ abstract class BaseService
         }
 
         $process = new Process($query);
+        $process->setTimeout(0);
         $process->setTty($tty);
         $process->run();
 
@@ -61,10 +62,10 @@ abstract class BaseService
 
     public function prompt($question, array $answers)
     {
-        $question = new ChoiceQuestion($question, $answers);
-        $helper = new QuestionHelper();
+        $question  = new ChoiceQuestion($question, $answers);
+        $helper    = new QuestionHelper();
         $argsInput = new ArgsInput($this->container['args']->getRawArgs(), $this->container['args']);
-        $ioOutput = new IOOutput($this->container['io']);
+        $ioOutput  = new IOOutput($this->container['io']);
 
         return $helper->ask($argsInput, $ioOutput, $question);
     }
